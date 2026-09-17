@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=Deepslate Launcher
+GenericName=Minecraft Bedrock Launcher
+Comment=Modern Minecraft Bedrock Launcher for Linux with Ore UI theme
+Exec=/home/anirudh/Projects/deepslate/deepslate %U
+Icon=deepslate
+Terminal=false
+Type=Application
+Categories=Game;
+Keywords=minecraft;bedrock;launcher;deepslate;
+StartupWMClass=deepslate.desktop
