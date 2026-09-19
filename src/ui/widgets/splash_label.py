@@ -82,21 +82,29 @@ class SplashLabel(QWidget):
 
         transform = QTransform()
         transform.translate(cx, cy)
-        transform.rotate(-15.0)
+        transform.rotate(-20.0)
         transform.scale(scale, scale)
         transform.translate(-cx, -cy)
         painter.setTransform(transform)
 
         font = QFont("Mojangles", 11)
+        font.setStyleStrategy(QFont.NoAntialias)
         font.setBold(True)
         painter.setFont(font)
 
+        fm = painter.fontMetrics()
+        tw = fm.horizontalAdvance(self.text)
+        th = fm.ascent()
+
+        tx = int(cx - tw / 2.0)
+        ty = int(cy + th / 3.0)
+
         # Draw drop shadow (#3F3F00)
         painter.setPen(QColor(63, 63, 0))
-        painter.drawText(int(cx - 110) + 2, int(cy + 4) + 2, self.text)
+        painter.drawText(tx + 2, ty + 2, self.text)
 
         # Draw bright yellow text (#FFFF55)
         painter.setPen(QColor(255, 255, 85))
-        painter.drawText(int(cx - 110), int(cy + 4), self.text)
+        painter.drawText(tx, ty, self.text)
 
         painter.end()

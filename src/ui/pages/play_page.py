@@ -10,8 +10,8 @@ from PySide6.QtWidgets import (
     QFrame, QCheckBox, QSpacerItem, QSizePolicy, QMessageBox
 )
 from typing import Optional
-from PySide6.QtCore import Qt, Signal, QTimer
-from PySide6.QtGui import QPixmap, QCursor, QPainter, QColor, QBrush
+from PySide6.QtCore import Qt, Signal, QTimer, QSize
+from PySide6.QtGui import QPixmap, QCursor, QPainter, QColor, QBrush, QIcon
 from src.bridge.engine import engine
 from src.ui.theme import IMAGES_DIR, ICONS_DIR
 from ..widgets.ore_button import OreButton
@@ -76,33 +76,31 @@ class PlayPage(QWidget):
         
         # Background panorama overlay with Minecraft Bedrock title
         title_container = QWidget()
-        title_container_layout = QVBoxLayout(title_container)
-        title_container_layout.setAlignment(Qt.AlignCenter)
-        title_container_layout.setSpacing(4)
-        
+        title_container.setFixedSize(540, 160)
+
         title_img_path = IMAGES_DIR / "minecraft_title.png"
         if title_img_path.exists():
             title_pix = QPixmap(str(title_img_path)).scaled(400, 100, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-            title_label = QLabel()
+            title_label = QLabel(title_container)
             title_label.setPixmap(title_pix)
+            title_label.setGeometry(70, 8, 400, 100)
             title_label.setAlignment(Qt.AlignCenter)
-            title_container_layout.addWidget(title_label)
         else:
-            title_label = QLabel("MINECRAFT")
+            title_label = QLabel("MINECRAFT", title_container)
             title_label.setObjectName("PageTitle")
+            title_label.setGeometry(70, 8, 400, 100)
             title_label.setAlignment(Qt.AlignCenter)
-            title_container_layout.addWidget(title_label)
 
-        sub_hero = QLabel("Bedrock Edition for Linux")
+        sub_hero = QLabel("Bedrock Edition for Linux", title_container)
         sub_hero.setStyleSheet("font-size: 13px; font-weight: bold; color: #2ECC71; letter-spacing: 1px;")
+        sub_hero.setGeometry(70, 112, 400, 24)
         sub_hero.setAlignment(Qt.AlignCenter)
-        title_container_layout.addWidget(sub_hero)
 
-        # Minecraft Splash text
-        self.splash = SplashLabel()
-        title_container_layout.addWidget(self.splash, alignment=Qt.AlignCenter)
+        # Minecraft Splash text anchored at bottom right of the MINECRAFT logo
+        self.splash = SplashLabel(title_container)
+        self.splash.setGeometry(340, 58, 240, 60)
 
-        hero_layout.addWidget(title_container)
+        hero_layout.addWidget(title_container, alignment=Qt.AlignCenter)
         main_layout.addWidget(hero_frame)
 
         # 2. Quick Toggles & Folder Bar
@@ -129,11 +127,21 @@ class PlayPage(QWidget):
         toggles_layout.addWidget(self.wayland_cb)
         toggles_layout.addStretch()
 
-        worlds_btn = OreButton("📁 Worlds")
+        ore_dir = ICONS_DIR / "ore"
+
+        worlds_btn = OreButton("Worlds")
+        worlds_icon = ore_dir / "worlds.png"
+        if worlds_icon.exists():
+            worlds_btn.setIcon(QIcon(str(worlds_icon)))
+            worlds_btn.setIconSize(QSize(18, 18))
         worlds_btn.clicked.connect(lambda: engine.open_mojang_subfolder("minecraftWorlds"))
         toggles_layout.addWidget(worlds_btn)
 
-        shots_btn = OreButton("📸 Shots")
+        shots_btn = OreButton("Screenshots")
+        shots_icon = ore_dir / "screenshots.png"
+        if shots_icon.exists():
+            shots_btn.setIcon(QIcon(str(shots_icon)))
+            shots_btn.setIconSize(QSize(18, 18))
         shots_btn.clicked.connect(lambda: engine.open_mojang_subfolder("Screenshots"))
         toggles_layout.addWidget(shots_btn)
 
@@ -257,7 +265,7 @@ class PlayPage(QWidget):
         else:
             icon_path = ICONS_DIR / "status_offline.svg"
         if icon_path.exists():
-            pix = QPixmap(str(icon_path)).scaled(12, 12, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            pix = QPixmap(str(icon_path)).scaled(12, 12, Qt.KeepAspectRatio, Qt.FastTransformation)
             self.status_icon.setPixmap(pix)
 
     def set_game_running(self, running: bool):

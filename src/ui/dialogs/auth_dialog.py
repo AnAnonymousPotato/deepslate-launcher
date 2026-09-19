@@ -9,10 +9,11 @@ from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QLabel,
     QPushButton, QApplication, QFrame
 )
-from PySide6.QtCore import Qt, Signal, QObject
-from PySide6.QtGui import QCursor
+from PySide6.QtCore import Qt, Signal, QObject, QSize
+from PySide6.QtGui import QCursor, QIcon
 
 from bol.auth import NativeAuth
+from src.ui.theme import ORE_UI_DIR
 from ..widgets.ore_button import OreButton
 
 class AuthSignals(QObject):
@@ -115,14 +116,18 @@ class AuthDialog(QDialog):
     def _copy_code(self):
         if self.code:
             QApplication.clipboard().setText(self.code)
-            self.copy_btn.setText("✓ Copied!")
+            check_icon = ORE_UI_DIR / "checkbox-checked-emerald.svg"
+            if check_icon.exists():
+                self.copy_btn.setIcon(QIcon(str(check_icon)))
+                self.copy_btn.setIconSize(QSize(16, 16))
+            self.copy_btn.setText("Copied!")
 
     def _open_browser(self):
         if self.url:
             webbrowser.open(self.url)
 
     def _on_completed(self):
-        self.instruction_label.setText("✓ Successfully signed in to Xbox Live!")
+        self.instruction_label.setText("Successfully signed in to Xbox Live!")
         self.instruction_label.setStyleSheet("color: #2ECC71; font-weight: bold;")
         self.code_label.setText("READY")
         self.close_btn.setText("Close")

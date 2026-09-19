@@ -7,10 +7,14 @@ from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QFrame,
     QInputDialog, QMessageBox, QScrollArea
 )
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Qt, Signal, QSize
+from PySide6.QtGui import QIcon
 
 from src.bridge.engine import engine
+from src.ui.theme import ICONS_DIR
 from ..widgets.ore_button import OreButton
+
+ORE_ICONS = ICONS_DIR / "ore"
 
 class ProfilesPage(QWidget):
     """Isolated Xbox profiles manager."""
@@ -28,7 +32,11 @@ class ProfilesPage(QWidget):
         header.addWidget(title)
         header.addStretch()
 
-        create_btn = OreButton("+ Create Profile", variant="accent")
+        create_btn = OreButton("Create Profile", variant="accent")
+        new_icon = ORE_ICONS / "new.png"
+        if new_icon.exists():
+            create_btn.setIcon(QIcon(str(new_icon)))
+            create_btn.setIconSize(QSize(16, 16))
         create_btn.clicked.connect(self._create_profile)
         header.addWidget(create_btn)
 
@@ -84,18 +92,29 @@ class ProfilesPage(QWidget):
         info.addWidget(name_lbl)
 
         if is_active:
+            status_row = QHBoxLayout()
             status = QLabel("Active Profile")
             status.setObjectName("StatusBadge")
-            info.addWidget(status)
+            status_row.addWidget(status)
+            status_row.addStretch()
+            info.addLayout(status_row)
 
         layout.addLayout(info, 1)
 
         sc_btn = OreButton("Shortcut")
+        sc_icon = ORE_ICONS / "shortcut.png"
+        if sc_icon.exists():
+            sc_btn.setIcon(QIcon(str(sc_icon)))
+            sc_btn.setIconSize(QSize(16, 16))
         sc_btn.clicked.connect(lambda _, n=name: self._make_shortcut(n))
         layout.addWidget(sc_btn)
 
         if name != "Default":
             del_btn = OreButton("Delete", variant="warning")
+            del_icon = ORE_ICONS / "delete.png"
+            if del_icon.exists():
+                del_btn.setIcon(QIcon(str(del_icon)))
+                del_btn.setIconSize(QSize(16, 16))
             del_btn.clicked.connect(lambda _, n=name: self._delete_profile(n))
             layout.addWidget(del_btn)
 

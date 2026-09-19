@@ -11,11 +11,14 @@ from PySide6.QtWidgets import (
     QFrame, QMessageBox, QDialog, QComboBox, QCheckBox,
     QProgressBar, QSizePolicy
 )
-from PySide6.QtCore import Qt, Signal, QThread
-from PySide6.QtGui import QCursor
+from PySide6.QtCore import Qt, Signal, QThread, QSize
+from PySide6.QtGui import QCursor, QIcon
 
 from src.bridge.engine import engine
+from src.ui.theme import ICONS_DIR
 from ..widgets.ore_button import OreButton
+
+ORE_ICONS = ICONS_DIR / "ore"
 
 class DownloadWorker(QThread):
     progress = Signal(int, int) # done, total
@@ -62,11 +65,19 @@ class InstallationsPage(QWidget):
         header.addWidget(title)
         header.addStretch()
 
-        self.refresh_btn = OreButton("↻ Refresh")
+        self.refresh_btn = OreButton("Refresh")
+        ref_icon = ORE_ICONS / "refresh.png"
+        if ref_icon.exists():
+            self.refresh_btn.setIcon(QIcon(str(ref_icon)))
+            self.refresh_btn.setIconSize(QSize(16, 16))
         self.refresh_btn.clicked.connect(self.populate_builds)
         header.addWidget(self.refresh_btn)
 
-        self.new_install_btn = OreButton("+ New Installation", variant="accent")
+        self.new_install_btn = OreButton("New Installation", variant="accent")
+        new_icon = ORE_ICONS / "new.png"
+        if new_icon.exists():
+            self.new_install_btn.setIcon(QIcon(str(new_icon)))
+            self.new_install_btn.setIconSize(QSize(16, 16))
         self.new_install_btn.clicked.connect(self._show_install_dialog)
         header.addWidget(self.new_install_btn)
 
@@ -152,10 +163,18 @@ class InstallationsPage(QWidget):
             layout.addWidget(use_btn)
 
         folder_btn = OreButton("Folder")
+        folder_icon = ORE_ICONS / "viewfolder.png"
+        if folder_icon.exists():
+            folder_btn.setIcon(QIcon(str(folder_icon)))
+            folder_btn.setIconSize(QSize(16, 16))
         folder_btn.clicked.connect(lambda _, p=build.get("path"): self._open_folder(p))
         layout.addWidget(folder_btn)
 
         del_btn = OreButton("Delete", variant="warning")
+        del_icon = ORE_ICONS / "delete.png"
+        if del_icon.exists():
+            del_btn.setIcon(QIcon(str(del_icon)))
+            del_btn.setIconSize(QSize(16, 16))
         del_btn.clicked.connect(lambda _, b=build: self._delete_build(b))
         layout.addWidget(del_btn)
 

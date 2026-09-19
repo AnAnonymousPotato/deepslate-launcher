@@ -35,6 +35,9 @@ def main():
     app.setOrganizationName("Deepslate")
     app.setDesktopFileName("deepslate.desktop")
 
+    from src.ui.theme import init_fonts
+    init_fonts()
+
     window = MainWindow()
     window.show()
 

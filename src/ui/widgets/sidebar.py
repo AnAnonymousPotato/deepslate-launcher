@@ -12,7 +12,9 @@ from PySide6.QtCore import Qt, Signal, QSize
 from PySide6.QtGui import QPixmap, QIcon, QCursor, QAction
 
 from src.bridge.engine import engine
-from src.ui.theme import ICONS_DIR
+from src.ui.theme import ICONS_DIR, ORE_UI_DIR
+
+ORE_ICONS = ICONS_DIR / "ore"
 
 class Sidebar(QFrame):
     """Left navigation sidebar matching the Minecraft Launcher layout."""
@@ -39,7 +41,7 @@ class Sidebar(QFrame):
         bedrock_icon_path = ICONS_DIR / "bedrock.png"
         icon_label = QLabel()
         if bedrock_icon_path.exists():
-            pix = QPixmap(str(bedrock_icon_path)).scaled(32, 32, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            pix = QPixmap(str(bedrock_icon_path)).scaled(32, 32, Qt.KeepAspectRatio, Qt.FastTransformation)
             icon_label.setPixmap(pix)
         
         title_box = QVBoxLayout()
@@ -65,21 +67,23 @@ class Sidebar(QFrame):
         # 2. Nav Items
         self.buttons: dict[str, QPushButton] = {}
         nav_items = [
-            ("play", "Play", "nav_play.png"),
-            ("installations", "Installations", "nav_installations.png"),
-            ("settings", "Settings", "nav_settings.png"),
-            ("tools", "Tools", "nav_tools.png"),
-            ("profiles", "Profiles", "nav_profiles.png"),
-            ("changelog", "Patch Notes", "nav_changelog.png"),
+            ("play", "Play", "launch.png"),
+            ("installations", "Installations", "packages.png"),
+            ("settings", "Settings", "settings.png"),
+            ("tools", "Tools", "externaltools.png"),
+            ("profiles", "Profiles", "accounts.png"),
+            ("changelog", "Patch Notes", "notes.png"),
         ]
         
         for key, label, icon_name in nav_items:
             btn = QPushButton(f"  {label}")
             btn.setObjectName("SidebarNavButton")
-            icon_path = ICONS_DIR / icon_name
+            icon_path = ORE_ICONS / icon_name
+            if not icon_path.exists():
+                icon_path = ICONS_DIR / icon_name
             if icon_path.exists():
                 btn.setIcon(QIcon(str(icon_path)))
-                btn.setIconSize(QSize(18, 18))
+                btn.setIconSize(QSize(22, 22))
             btn.setCursor(QCursor(Qt.PointingHandCursor))
             btn.clicked.connect(lambda checked=False, k=key: self.set_active_page(k))
             self.buttons[key] = btn
@@ -140,16 +144,11 @@ class Sidebar(QFrame):
             icon_path = ICONS_DIR / "status_offline.svg"
 
         if icon_path.exists():
-            pix = QPixmap(str(icon_path)).scaled(12, 12, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            pix = QPixmap(str(icon_path)).scaled(12, 12, Qt.KeepAspectRatio, Qt.FastTransformation)
             self.status_icon.setPixmap(pix)
 
     def _show_account_menu(self, event):
         menu = QMenu(self)
-        menu.setStyleSheet(
-            "QMenu { background-color: #222324; border: 2px solid #4B9736; padding: 4px; }"
-            "QMenu::item { padding: 6px 20px; color: #FFFFFF; font-family: Mojangles; }"
-            "QMenu::item:selected { background-color: #4B9736; }"
-        )
 
         signed_in = engine.is_signed_in()
         store_linked = engine.is_store_account_linked()
@@ -161,9 +160,13 @@ class Sidebar(QFrame):
             menu.addAction(info_act)
             menu.addSeparator()
 
-            store_text = "✓ Store Account Linked" if store_linked else "Link Microsoft Store Account"
-            store_act = menu.addAction(store_text)
+            if store_linked:
+                check_icon_path = ORE_UI_DIR / "checkbox-checked-emerald.svg"
+                store_act = QAction(QIcon(str(check_icon_path)), "Store Account Linked", self)
+            else:
+                store_act = QAction("Link Microsoft Store Account", self)
             store_act.triggered.connect(self.store_link_requested.emit)
+            menu.addAction(store_act)
 
             sign_out_act = menu.addAction("Sign Out")
             sign_out_act.triggered.connect(self._handle_sign_out)

@@ -8,10 +8,14 @@ from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QFrame,
     QPlainTextEdit, QFileDialog, QMessageBox, QTabWidget
 )
-from PySide6.QtCore import Qt, QThread, Signal
+from PySide6.QtCore import Qt, QThread, Signal, QSize
+from PySide6.QtGui import QIcon
 
 from src.bridge.engine import engine
+from src.ui.theme import ICONS_DIR
 from ..widgets.ore_button import OreButton
+
+ORE_ICONS = ICONS_DIR / "ore"
 
 class CommandWorker(QThread):
     output_ready = Signal(str)
@@ -55,10 +59,18 @@ class ToolsPage(QWidget):
 
         btn_row = QHBoxLayout()
         doctor_btn = OreButton("Run System Doctor")
+        d_icon = ORE_ICONS / "externaltools.png"
+        if d_icon.exists():
+            doctor_btn.setIcon(QIcon(str(d_icon)))
+            doctor_btn.setIconSize(QSize(16, 16))
         doctor_btn.clicked.connect(self._run_doctor)
         btn_row.addWidget(doctor_btn)
 
         net_btn = OreButton("Run Network Diagnostics")
+        n_icon = ORE_ICONS / "server.png"
+        if n_icon.exists():
+            net_btn.setIcon(QIcon(str(n_icon)))
+            net_btn.setIconSize(QSize(16, 16))
         net_btn.clicked.connect(self._run_network)
         btn_row.addWidget(net_btn)
 
@@ -89,18 +101,34 @@ class ToolsPage(QWidget):
 
         f_btn_row = QHBoxLayout()
         worlds_btn = OreButton("Worlds Folder")
+        w_icon = ORE_ICONS / "worlds.png"
+        if w_icon.exists():
+            worlds_btn.setIcon(QIcon(str(w_icon)))
+            worlds_btn.setIconSize(QSize(16, 16))
         worlds_btn.clicked.connect(lambda: engine.open_mojang_subfolder("minecraftWorlds"))
         f_btn_row.addWidget(worlds_btn)
 
         shots_btn = OreButton("Screenshots Folder")
+        s_icon = ORE_ICONS / "screenshots.png"
+        if s_icon.exists():
+            shots_btn.setIcon(QIcon(str(s_icon)))
+            shots_btn.setIconSize(QSize(16, 16))
         shots_btn.clicked.connect(lambda: engine.open_mojang_subfolder("Screenshots"))
         f_btn_row.addWidget(shots_btn)
 
         skins_btn = OreButton("Skins Folder")
+        sk_icon = ORE_ICONS / "appearance.png"
+        if sk_icon.exists():
+            skins_btn.setIcon(QIcon(str(sk_icon)))
+            skins_btn.setIconSize(QSize(16, 16))
         skins_btn.clicked.connect(lambda: engine.open_mojang_subfolder("custom_skins"))
         f_btn_row.addWidget(skins_btn)
 
         backup_btn = OreButton("Backup Worlds (ZIP)", variant="accent")
+        b_icon = ORE_ICONS / "export.png"
+        if b_icon.exists():
+            backup_btn.setIcon(QIcon(str(b_icon)))
+            backup_btn.setIconSize(QSize(16, 16))
         backup_btn.clicked.connect(self._backup_worlds)
         f_btn_row.addWidget(backup_btn)
 
@@ -117,6 +145,10 @@ class ToolsPage(QWidget):
         layout.addWidget(import_desc)
 
         import_btn = OreButton("Select File(s) to Import...")
+        im_icon = ORE_ICONS / "import.png"
+        if im_icon.exists():
+            import_btn.setIcon(QIcon(str(im_icon)))
+            import_btn.setIconSize(QSize(16, 16))
         import_btn.clicked.connect(self._import_files)
         layout.addWidget(import_btn)
 
@@ -130,6 +162,10 @@ class ToolsPage(QWidget):
         layout.addWidget(sc_desc)
 
         sc_btn = OreButton("Create Direct Play Shortcut")
+        sc_icon = ORE_ICONS / "shortcut.png"
+        if sc_icon.exists():
+            sc_btn.setIcon(QIcon(str(sc_icon)))
+            sc_btn.setIconSize(QSize(16, 16))
         sc_btn.clicked.connect(self._make_shortcut)
         layout.addWidget(sc_btn)
 
@@ -143,6 +179,10 @@ class ToolsPage(QWidget):
         layout.addWidget(rep_desc)
 
         rep_btn = OreButton("Reset Wine Prefix", variant="warning")
+        rep_icon = ORE_ICONS / "instance-settings.png"
+        if rep_icon.exists():
+            rep_btn.setIcon(QIcon(str(rep_icon)))
+            rep_btn.setIconSize(QSize(16, 16))
         rep_btn.clicked.connect(self._repair_prefix)
         layout.addWidget(rep_btn)
 

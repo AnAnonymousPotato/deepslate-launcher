@@ -15,24 +15,33 @@ ICONS_DIR = ASSETS_DIR / "icons"
 IMAGES_DIR = ASSETS_DIR / "images"
 
 def init_fonts():
-    """Register Mojangles and Minecraftia fonts with Qt."""
+    """Register Mojangles and Minecraftia fonts with Qt and configure crisp pixel rendering."""
     for font_file in FONTS_DIR.glob("*.*tf"):
         QFontDatabase.addApplicationFont(str(font_file))
+    
+    app = QApplication.instance()
+    if app:
+        font = QFont("Mojangles", 11)
+        font.setStyleStrategy(QFont.NoAntialias)
+        app.setFont(font)
 
 def get_font(size: int = 12, bold: bool = False) -> QFont:
-    """Return Mojangles font if available, fallback to sans-serif."""
+    """Return Mojangles font with crisp pixel rendering strategy."""
     families = QFontDatabase.families()
     family = "Mojangles" if "Mojangles" in families else "sans-serif"
     font = QFont(family, size)
+    font.setStyleStrategy(QFont.NoAntialias)
     if bold:
         font.setBold(True)
     return font
 
 def get_pixel_font(size: int = 10) -> QFont:
-    """Return Minecraftia font if available."""
+    """Return Minecraftia font with crisp pixel rendering strategy."""
     families = QFontDatabase.families()
     family = "Minecraftia" if "Minecraftia" in families else "monospace"
-    return QFont(family, size)
+    font = QFont(family, size)
+    font.setStyleStrategy(QFont.NoAntialias)
+    return font
 
 def generate_qss() -> str:
     """Generate the full Ore UI Dark Emerald QSS stylesheet."""
@@ -231,10 +240,50 @@ def generate_qss() -> str:
     QComboBox QAbstractItemView {{
         background-color: #222324;
         border: 2px solid #4B9736;
+        border-radius: 0px;
         color: #FFFFFF;
-        selection-background-color: #4B9736;
+        selection-background-color: #38761D;
         selection-color: #FFFFFF;
+        padding: 2px;
+        outline: none;
+    }}
+    QComboBox QAbstractItemView::item {{
+        min-height: 26px;
+        padding: 4px 8px;
+        border-radius: 0px;
+        color: #FFFFFF;
+    }}
+    QComboBox QAbstractItemView::item:selected {{
+        background-color: #38761D;
+        border: 1px solid #4B9736;
+        border-radius: 0px;
+        color: #FFFFFF;
+    }}
+
+    /* --- Popup Menus --- */
+    QMenu {{
+        background-color: #222324;
+        border: 2px solid #4B9736;
+        border-radius: 0px;
         padding: 4px;
+    }}
+    QMenu::item {{
+        padding: 6px 18px 6px 10px;
+        color: #FFFFFF;
+        font-family: "Mojangles";
+        font-size: 11px;
+        border-radius: 0px;
+    }}
+    QMenu::item:selected {{
+        background-color: #38761D;
+        border: 1px solid #4B9736;
+        border-radius: 0px;
+        color: #FFFFFF;
+    }}
+    QMenu::separator {{
+        height: 1px;
+        background-color: #39393B;
+        margin: 4px 2px;
     }}
 
     /* --- Checkboxes --- */
@@ -296,6 +345,7 @@ def generate_qss() -> str:
         color: #2ECC71;
         background-color: #123D06;
         border: 1px solid #4B9736;
+        border-radius: 0px;
         padding: 2px 8px;
         font-size: 11px;
         font-weight: bold;

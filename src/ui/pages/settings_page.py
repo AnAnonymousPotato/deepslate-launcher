@@ -172,6 +172,6 @@ class SettingsPage(QWidget):
 
     def _on_ack_gpu(self):
         engine.ack_gpu_crash()
-        self.gpu_status_lbl.setText("✓ GPU crash marker cleared.")
+        self.gpu_status_lbl.setText("[OK] GPU crash marker cleared.")
         self.gpu_status_lbl.setStyleSheet("color: #2ECC71;")
         QMessageBox.information(self, "Cleared", "GPU safety marker cleared successfully.")
