@@ -7,11 +7,14 @@ import re
 import html
 from pathlib import Path
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QTextBrowser, QHBoxLayout
-from PySide6.QtGui import QPalette, QColor
-from PySide6.QtCore import Qt
+from PySide6.QtGui import QPalette, QColor, QIcon
+from PySide6.QtCore import Qt, QSize
 
 from src.bridge.cli_bridge import run_cli_command
+from src.ui.theme import ICONS_DIR
 from src.ui.widgets.ore_button import OreButton
+
+ORE_ICONS = ICONS_DIR / "ore"
 
 def format_markdown_to_html(md_text: str) -> str:
     """Format raw markdown into dark-themed Minecraft styled HTML."""
@@ -104,6 +107,10 @@ class ChangelogPage(QWidget):
         header.addStretch()
 
         refresh_btn = OreButton("Refresh Notes")
+        ref_icon = ORE_ICONS / "refresh.png"
+        if ref_icon.exists():
+            refresh_btn.setIcon(QIcon(str(ref_icon)))
+            refresh_btn.setIconSize(QSize(16, 16))
         refresh_btn.clicked.connect(self.load_changelog)
         header.addWidget(refresh_btn)
 

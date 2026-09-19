@@ -128,7 +128,7 @@ class SettingsPage(QWidget):
             "⚠️ GPU crash detected from a previous run. Launching may be blocked." if has_crash
             else "[OK] Graphics driver state is healthy."
         )
-        self.gpu_status_lbl.setStyleSheet("color: #E67E22;" if has_crash else "color: #2ECC71;")
+        self.gpu_status_lbl.setStyleSheet("color: #E67E22;" if has_crash else "color: #70B95C;")
         layout.addWidget(self.gpu_status_lbl)
 
         ack_btn = OreButton("Acknowledge and Clear GPU Crash Marker")

@@ -7,18 +7,18 @@
   <rect x="4" y="4" width="14" height="14" fill="#202224"/>
   <!-- Pixelated Emerald Checkmark -->
   <g transform="translate(4, 3)">
-    <path d="M6 13H4V11H6V13Z" fill="#123D06"/>
-    <path d="M8 11H6V9H8V11Z" fill="#123D06"/>
-    <path d="M10 9H8V7H10V9Z" fill="#123D06"/>
-    <path d="M12 7H10V5H12V7Z" fill="#123D06"/>
-    <path d="M14 5H12V3H14V5Z" fill="#123D06"/>
-    <path d="M6 11H4V9H6V11Z" fill="#58D68D"/>
-    <path d="M4 9H2V7H4V9Z" fill="#58D68D"/>
-    <path d="M8 9H6V7H8V9Z" fill="#58D68D"/>
-    <path d="M2 7H0V5H2V7Z" fill="#58D68D"/>
-    <path d="M10 7H8V5H10V7Z" fill="#58D68D"/>
-    <path d="M12 5H10V3H12V5Z" fill="#58D68D"/>
-    <path d="M14 3H12V1H14V3Z" fill="#58D68D"/>
+    <path d="M6 13H4V11H6V13Z" fill="#236212"/>
+    <path d="M8 11H6V9H8V11Z" fill="#236212"/>
+    <path d="M10 9H8V7H10V9Z" fill="#236212"/>
+    <path d="M12 7H10V5H12V7Z" fill="#236212"/>
+    <path d="M14 5H12V3H14V5Z" fill="#236212"/>
+    <path d="M6 11H4V9H6V11Z" fill="#55FF55"/>
+    <path d="M4 9H2V7H4V9Z" fill="#55FF55"/>
+    <path d="M8 9H6V7H8V9Z" fill="#55FF55"/>
+    <path d="M2 7H0V5H2V7Z" fill="#55FF55"/>
+    <path d="M10 7H8V5H10V7Z" fill="#55FF55"/>
+    <path d="M12 5H10V3H12V5Z" fill="#55FF55"/>
+    <path d="M14 3H12V1H14V3Z" fill="#55FF55"/>
     <rect x="0" y="5" width="2" height="1" fill="#FFFFFF"/>
     <rect x="12" y="1" width="2" height="1" fill="#FFFFFF"/>
   </g>

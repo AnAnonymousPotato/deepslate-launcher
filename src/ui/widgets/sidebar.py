@@ -49,7 +49,7 @@ class Sidebar(QFrame):
         title_label = QLabel("DEEPSLATE")
         title_label.setStyleSheet("font-size: 16px; font-weight: bold; color: #FFFFFF; letter-spacing: 1px;")
         sub_label = QLabel("Bedrock Edition")
-        sub_label.setStyleSheet("font-size: 10px; color: #2ECC71; font-weight: bold;")
+        sub_label.setStyleSheet("font-size: 10px; color: #70B95C; font-weight: bold;")
         title_box.addWidget(title_label)
         title_box.addWidget(sub_label)
         
@@ -76,7 +76,7 @@ class Sidebar(QFrame):
         ]
         
         for key, label, icon_name in nav_items:
-            btn = QPushButton(f"  {label}")
+            btn = QPushButton(label)
             btn.setObjectName("SidebarNavButton")
             icon_path = ORE_ICONS / icon_name
             if not icon_path.exists():

@@ -76,29 +76,29 @@ class PlayPage(QWidget):
         
         # Background panorama overlay with Minecraft Bedrock title
         title_container = QWidget()
-        title_container.setFixedSize(540, 160)
+        title_container.setFixedSize(680, 160)
 
         title_img_path = IMAGES_DIR / "minecraft_title.png"
         if title_img_path.exists():
             title_pix = QPixmap(str(title_img_path)).scaled(400, 100, Qt.KeepAspectRatio, Qt.SmoothTransformation)
             title_label = QLabel(title_container)
             title_label.setPixmap(title_pix)
-            title_label.setGeometry(70, 8, 400, 100)
+            title_label.setGeometry(80, 8, 400, 100)
             title_label.setAlignment(Qt.AlignCenter)
         else:
             title_label = QLabel("MINECRAFT", title_container)
             title_label.setObjectName("PageTitle")
-            title_label.setGeometry(70, 8, 400, 100)
+            title_label.setGeometry(80, 8, 400, 100)
             title_label.setAlignment(Qt.AlignCenter)
 
         sub_hero = QLabel("Bedrock Edition for Linux", title_container)
-        sub_hero.setStyleSheet("font-size: 13px; font-weight: bold; color: #2ECC71; letter-spacing: 1px;")
-        sub_hero.setGeometry(70, 112, 400, 24)
+        sub_hero.setStyleSheet("font-size: 13px; font-weight: bold; color: #70B95C; letter-spacing: 1px;")
+        sub_hero.setGeometry(80, 112, 400, 24)
         sub_hero.setAlignment(Qt.AlignCenter)
 
         # Minecraft Splash text anchored at bottom right of the MINECRAFT logo
         self.splash = SplashLabel(title_container)
-        self.splash.setGeometry(340, 58, 240, 60)
+        self.splash.setGeometry(370, 48, 310, 95)
 
         hero_layout.addWidget(title_container, alignment=Qt.AlignCenter)
         main_layout.addWidget(hero_frame)

@@ -61,7 +61,7 @@ class AuthDialog(QDialog):
 
         self.code_label = QLabel("...")
         self.code_label.setStyleSheet(
-            "font-family: monospace; font-size: 26px; font-weight: bold; color: #2ECC71; letter-spacing: 4px;"
+            "font-family: monospace; font-size: 26px; font-weight: bold; color: #55FF55; letter-spacing: 4px;"
         )
         self.code_label.setAlignment(Qt.AlignCenter)
         code_card_layout.addWidget(self.code_label)

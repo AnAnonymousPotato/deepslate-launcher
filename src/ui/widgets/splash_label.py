@@ -47,7 +47,7 @@ class SplashLabel(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.text = random.choice(SPLASHES)
-        self.setFixedSize(300, 60)
+        self.setFixedSize(320, 95)
         self.setCursor(QCursor(Qt.PointingHandCursor))
         self.setToolTip("Click for another splash!")
 
@@ -70,11 +70,12 @@ class SplashLabel(QWidget):
 
     def paintEvent(self, event):
         painter = QPainter(self)
-        painter.setRenderHint(QPainter.Antialiasing)
-        painter.setRenderHint(QPainter.TextAntialiasing)
+        painter.setRenderHint(QPainter.Antialiasing, True)
+        painter.setRenderHint(QPainter.TextAntialiasing, True)
+        painter.setRenderHint(QPainter.SmoothPixmapTransform, True)
 
         # Pulse scale calculation
-        scale = 1.0 + 0.06 * math.sin(self.phase)
+        scale = 1.0 + 0.05 * math.sin(self.phase)
 
         # Center coordinates
         cx = self.width() / 2.0
@@ -87,8 +88,15 @@ class SplashLabel(QWidget):
         transform.translate(-cx, -cy)
         painter.setTransform(transform)
 
-        font = QFont("Mojangles", 11)
-        font.setStyleStrategy(QFont.NoAntialias)
+        length = len(self.text)
+        if length <= 18:
+            pt_size = 12
+        elif length <= 28:
+            pt_size = 11
+        else:
+            pt_size = 10
+
+        font = QFont("Mojangles", pt_size)
         font.setBold(True)
         painter.setFont(font)
 

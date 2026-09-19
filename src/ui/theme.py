@@ -15,33 +15,29 @@ ICONS_DIR = ASSETS_DIR / "icons"
 IMAGES_DIR = ASSETS_DIR / "images"
 
 def init_fonts():
-    """Register Mojangles and Minecraftia fonts with Qt and configure crisp pixel rendering."""
+    """Register Mojangles and Minecraftia fonts with Qt."""
     for font_file in FONTS_DIR.glob("*.*tf"):
         QFontDatabase.addApplicationFont(str(font_file))
     
     app = QApplication.instance()
     if app:
         font = QFont("Mojangles", 11)
-        font.setStyleStrategy(QFont.NoAntialias)
         app.setFont(font)
 
 def get_font(size: int = 12, bold: bool = False) -> QFont:
-    """Return Mojangles font with crisp pixel rendering strategy."""
+    """Return Mojangles font."""
     families = QFontDatabase.families()
     family = "Mojangles" if "Mojangles" in families else "sans-serif"
     font = QFont(family, size)
-    font.setStyleStrategy(QFont.NoAntialias)
     if bold:
         font.setBold(True)
     return font
 
 def get_pixel_font(size: int = 10) -> QFont:
-    """Return Minecraftia font with crisp pixel rendering strategy."""
+    """Return Minecraftia font."""
     families = QFontDatabase.families()
     family = "Minecraftia" if "Minecraftia" in families else "monospace"
-    font = QFont(family, size)
-    font.setStyleStrategy(QFont.NoAntialias)
-    return font
+    return QFont(family, size)
 
 def generate_qss() -> str:
     """Generate the full Ore UI Dark Emerald QSS stylesheet."""
@@ -113,6 +109,7 @@ def generate_qss() -> str:
         font-size: 13px;
         color: #FFFFFF;
         background-color: #39393B;
+        spacing: 8px;
         border: 4px;
         border-bottom: 8px;
         border-image: url("{ui_path}/button-default-default.svg") 4 4 8 4 repeat;
@@ -194,7 +191,8 @@ def generate_qss() -> str:
     QPushButton#SidebarNavButton {{
         text-align: left;
         font-size: 13px;
-        padding-left: 16px;
+        padding-left: 14px;
+        spacing: 10px;
         min-height: 38px;
         background: transparent;
         border: 2px solid transparent;
@@ -207,8 +205,8 @@ def generate_qss() -> str:
     }}
     QPushButton#SidebarNavButton[active="true"] {{
         background-color: #2A2B2C;
-        border-left: 4px solid #2ECC71;
-        color: #2ECC71;
+        border-left: 4px solid #3B8526;
+        color: #FFFFFF;
         font-weight: bold;
     }}
 
@@ -242,7 +240,7 @@ def generate_qss() -> str:
         border: 2px solid #4B9736;
         border-radius: 0px;
         color: #FFFFFF;
-        selection-background-color: #38761D;
+        selection-background-color: #3B8526;
         selection-color: #FFFFFF;
         padding: 2px;
         outline: none;
@@ -254,7 +252,7 @@ def generate_qss() -> str:
         color: #FFFFFF;
     }}
     QComboBox QAbstractItemView::item:selected {{
-        background-color: #38761D;
+        background-color: #3B8526;
         border: 1px solid #4B9736;
         border-radius: 0px;
         color: #FFFFFF;
@@ -275,7 +273,7 @@ def generate_qss() -> str:
         border-radius: 0px;
     }}
     QMenu::item:selected {{
-        background-color: #38761D;
+        background-color: #3B8526;
         border: 1px solid #4B9736;
         border-radius: 0px;
         color: #FFFFFF;
@@ -333,7 +331,7 @@ def generate_qss() -> str:
     QLabel#SectionHeader {{
         font-size: 15px;
         font-weight: bold;
-        color: #2ECC71;
+        color: #70B95C;
         margin-top: 8px;
         margin-bottom: 4px;
     }}
@@ -342,9 +340,9 @@ def generate_qss() -> str:
         font-size: 11px;
     }}
     QLabel#StatusBadge {{
-        color: #2ECC71;
-        background-color: #123D06;
-        border: 1px solid #4B9736;
+        color: #70B95C;
+        background-color: #1A3814;
+        border: 1px solid #3B8526;
         border-radius: 0px;
         padding: 2px 8px;
         font-size: 11px;
@@ -361,14 +359,14 @@ def generate_qss() -> str:
         height: 18px;
     }}
     QProgressBar::chunk {{
-        background-color: #4B9736;
+        background-color: #3B8526;
     }}
 
     /* --- Real-Time Console / Log Drawer --- */
     QPlainTextEdit#ConsoleDrawer, QTextBrowser#ChangelogBrowser {{
         background-color: #121314;
         border: 2px solid #2B2C2E;
-        color: #7FE0A0;
+        color: #A3E49B;
         font-family: "Minecraftia", monospace;
         font-size: 11px;
         padding: 8px;
@@ -390,8 +388,8 @@ def generate_qss() -> str:
     }}
     QTabBar::tab:selected {{
         background-color: #222324;
-        color: #2ECC71;
-        border-top: 3px solid #2ECC71;
+        color: #70B95C;
+        border-top: 3px solid #3B8526;
         font-weight: bold;
     }}
     QTabBar::tab:hover:!selected {{
