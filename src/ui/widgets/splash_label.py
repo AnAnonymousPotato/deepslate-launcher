@@ -96,7 +96,7 @@ class SplashLabel(QWidget):
         else:
             pt_size = 10
 
-        font = QFont("Minecraft Default", pt_size)
+        font = QFont("Mojangles", pt_size)
         font.setBold(True)
         painter.setFont(font)
 
