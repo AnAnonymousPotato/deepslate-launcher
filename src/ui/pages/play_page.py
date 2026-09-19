@@ -17,6 +17,8 @@ from src.ui.theme import IMAGES_DIR, ICONS_DIR
 from ..widgets.ore_button import OreButton
 from ..widgets.splash_label import SplashLabel
 
+ORE_ICONS = ICONS_DIR / "ore"
+
 class HeroBannerWidget(QFrame):
     """Hero banner with Minecraft panorama background and dark vignette overlay."""
 
@@ -192,6 +194,10 @@ class PlayPage(QWidget):
         self.action_button = OreButton("PLAY", variant="accent")
         self.action_button.setFixedWidth(200)
         self.action_button.setFixedHeight(46)
+        play_icon = ORE_ICONS / "launch.png"
+        if play_icon.exists():
+            self.action_button.setIcon(QIcon(str(play_icon)))
+            self.action_button.setIconSize(QSize(20, 20))
         self.action_button.clicked.connect(self._on_action_clicked)
         dock_layout.addWidget(self.action_button)
 
@@ -273,12 +279,18 @@ class PlayPage(QWidget):
         if running:
             engine.start_session()
             self.action_button.setText("STOP")
+            stop_icon = ORE_ICONS / "delete.png"
+            if stop_icon.exists():
+                self.action_button.setIcon(QIcon(str(stop_icon)))
             self.action_button.set_variant("warning")
             self._update_status_icon(False, busy=True)
             self.status_text.setText("Minecraft is running...")
         else:
             engine.end_session()
             self.action_button.setText("PLAY")
+            play_icon = ORE_ICONS / "launch.png"
+            if play_icon.exists():
+                self.action_button.setIcon(QIcon(str(play_icon)))
             self.action_button.set_variant("accent")
             self._update_status_icon(True)
             self.status_text.setText("Ready to play")
