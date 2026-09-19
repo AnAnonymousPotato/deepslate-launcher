@@ -224,7 +224,7 @@ class InstallationsPage(QWidget):
         cancel_btn.clicked.connect(dlg.reject)
         btn_box.addWidget(cancel_btn)
 
-        start_btn = OreButton("Download & Install", variant="accent")
+        start_btn = OreButton("Download and Install", variant="accent")
         btn_box.addWidget(start_btn)
         dlg_layout.addLayout(btn_box)
 

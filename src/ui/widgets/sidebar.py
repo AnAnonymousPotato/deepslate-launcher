@@ -65,17 +65,21 @@ class Sidebar(QFrame):
         # 2. Nav Items
         self.buttons: dict[str, QPushButton] = {}
         nav_items = [
-            ("play", "🎮  Play"),
-            ("installations", "📦  Installations"),
-            ("settings", "⚙️  Settings"),
-            ("tools", "🛠️  Tools && Diag"),
-            ("profiles", "👤  Profiles"),
-            ("changelog", "📜  Patch Notes"),
+            ("play", "Play", "nav_play.png"),
+            ("installations", "Installations", "nav_installations.png"),
+            ("settings", "Settings", "nav_settings.png"),
+            ("tools", "Tools", "nav_tools.png"),
+            ("profiles", "Profiles", "nav_profiles.png"),
+            ("changelog", "Patch Notes", "nav_changelog.png"),
         ]
         
-        for key, label in nav_items:
-            btn = QPushButton(label)
+        for key, label, icon_name in nav_items:
+            btn = QPushButton(f"  {label}")
             btn.setObjectName("SidebarNavButton")
+            icon_path = ICONS_DIR / icon_name
+            if icon_path.exists():
+                btn.setIcon(QIcon(str(icon_path)))
+                btn.setIconSize(QSize(18, 18))
             btn.setCursor(QCursor(Qt.PointingHandCursor))
             btn.clicked.connect(lambda checked=False, k=key: self.set_active_page(k))
             self.buttons[key] = btn
@@ -97,13 +101,14 @@ class Sidebar(QFrame):
         acct_layout.setContentsMargins(6, 6, 6, 6)
         acct_layout.setSpacing(8)
 
-        self.status_dot = QLabel("●")
-        self.status_dot.setStyleSheet("color: #2ECC71; font-size: 12px;")
+        self.status_icon = QLabel()
+        self.status_icon.setFixedSize(14, 14)
+        self.status_icon.setAlignment(Qt.AlignCenter)
 
         self.gamertag_label = QLabel("Not Signed In")
         self.gamertag_label.setStyleSheet("font-size: 12px; font-weight: bold; color: #FFFFFF;")
 
-        acct_layout.addWidget(self.status_dot)
+        acct_layout.addWidget(self.status_icon)
         acct_layout.addWidget(self.gamertag_label, 1)
 
         menu_hint = QLabel("▾")
@@ -129,10 +134,14 @@ class Sidebar(QFrame):
         if signed_in:
             gt = engine.get_account_gamertag() or "Xbox Player"
             self.gamertag_label.setText(gt)
-            self.status_dot.setStyleSheet("color: #2ECC71; font-size: 12px;")
+            icon_path = ICONS_DIR / "status_online.svg"
         else:
             self.gamertag_label.setText("Sign In (Xbox)")
-            self.status_dot.setStyleSheet("color: #C0392B; font-size: 12px;")
+            icon_path = ICONS_DIR / "status_offline.svg"
+
+        if icon_path.exists():
+            pix = QPixmap(str(icon_path)).scaled(12, 12, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            self.status_icon.setPixmap(pix)
 
     def _show_account_menu(self, event):
         menu = QMenu(self)

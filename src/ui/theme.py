@@ -254,10 +254,10 @@ def generate_qss() -> str:
         image: url("{ui_path}/checkbox-unchecked-hover.svg");
     }}
     QCheckBox::indicator:checked {{
-        image: url("{ui_path}/checkbox-checked-default.svg");
+        image: url("{ui_path}/checkbox-checked-emerald.svg");
     }}
     QCheckBox::indicator:checked:hover {{
-        image: url("{ui_path}/checkbox-checked-hover.svg");
+        image: url("{ui_path}/checkbox-checked-hover-emerald.svg");
     }}
 
     /* --- Frames & Cards --- */

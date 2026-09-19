@@ -13,8 +13,9 @@ from typing import Optional
 from PySide6.QtCore import Qt, Signal, QTimer
 from PySide6.QtGui import QPixmap, QCursor, QPainter, QColor, QBrush
 from src.bridge.engine import engine
-from src.ui.theme import IMAGES_DIR
+from src.ui.theme import IMAGES_DIR, ICONS_DIR
 from ..widgets.ore_button import OreButton
+from ..widgets.splash_label import SplashLabel
 
 class HeroBannerWidget(QFrame):
     """Hero banner with Minecraft panorama background and dark vignette overlay."""
@@ -77,10 +78,11 @@ class PlayPage(QWidget):
         title_container = QWidget()
         title_container_layout = QVBoxLayout(title_container)
         title_container_layout.setAlignment(Qt.AlignCenter)
+        title_container_layout.setSpacing(4)
         
         title_img_path = IMAGES_DIR / "minecraft_title.png"
         if title_img_path.exists():
-            title_pix = QPixmap(str(title_img_path)).scaled(420, 110, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            title_pix = QPixmap(str(title_img_path)).scaled(400, 100, Qt.KeepAspectRatio, Qt.SmoothTransformation)
             title_label = QLabel()
             title_label.setPixmap(title_pix)
             title_label.setAlignment(Qt.AlignCenter)
@@ -92,21 +94,25 @@ class PlayPage(QWidget):
             title_container_layout.addWidget(title_label)
 
         sub_hero = QLabel("Bedrock Edition for Linux")
-        sub_hero.setStyleSheet("font-size: 14px; font-weight: bold; color: #2ECC71; letter-spacing: 1px;")
+        sub_hero.setStyleSheet("font-size: 13px; font-weight: bold; color: #2ECC71; letter-spacing: 1px;")
         sub_hero.setAlignment(Qt.AlignCenter)
         title_container_layout.addWidget(sub_hero)
+
+        # Minecraft Splash text
+        self.splash = SplashLabel()
+        title_container_layout.addWidget(self.splash, alignment=Qt.AlignCenter)
 
         hero_layout.addWidget(title_container)
         main_layout.addWidget(hero_frame)
 
-        # 2. Quick Toggles Bar
+        # 2. Quick Toggles & Folder Bar
         toggles_frame = QFrame()
         toggles_frame.setObjectName("Card")
         toggles_layout = QHBoxLayout(toggles_frame)
         toggles_layout.setContentsMargins(14, 8, 14, 8)
         toggles_layout.setSpacing(18)
 
-        self.mangohud_cb = QCheckBox("MangoHud Overlay")
+        self.mangohud_cb = QCheckBox("MangoHud")
         self.mangohud_cb.setChecked("MANGOHUD=1" in engine.get_setting("custom_env", ""))
         self.mangohud_cb.toggled.connect(self._on_mangohud_toggled)
 
@@ -114,7 +120,7 @@ class PlayPage(QWidget):
         self.rtx_cb.setChecked(engine.get_setting("vkd3d_proton", True))
         self.rtx_cb.toggled.connect(self._on_rtx_toggled)
 
-        self.wayland_cb = QCheckBox("Wayland Driver (BOL_INPUT=wayland)")
+        self.wayland_cb = QCheckBox("Wayland Driver")
         self.wayland_cb.setChecked("BOL_INPUT=wayland" in engine.get_setting("custom_env", ""))
         self.wayland_cb.toggled.connect(self._on_wayland_toggled)
 
@@ -123,17 +129,33 @@ class PlayPage(QWidget):
         toggles_layout.addWidget(self.wayland_cb)
         toggles_layout.addStretch()
 
+        worlds_btn = OreButton("📁 Worlds")
+        worlds_btn.clicked.connect(lambda: engine.open_mojang_subfolder("minecraftWorlds"))
+        toggles_layout.addWidget(worlds_btn)
+
+        shots_btn = OreButton("📸 Shots")
+        shots_btn.clicked.connect(lambda: engine.open_mojang_subfolder("Screenshots"))
+        toggles_layout.addWidget(shots_btn)
+
         main_layout.addWidget(toggles_frame)
 
-        # 3. Status Bar
+        # 3. Status Bar with Playtime
         status_box = QHBoxLayout()
-        self.status_icon = QLabel("●")
-        self.status_icon.setStyleSheet("color: #2ECC71; font-size: 13px;")
+        self.status_icon = QLabel()
+        self.status_icon.setFixedSize(14, 14)
+        self.status_icon.setAlignment(Qt.AlignCenter)
+        self._update_status_icon(True)
+
         self.status_text = QLabel("Ready to play")
         self.status_text.setStyleSheet("font-size: 12px; color: #CCCCCC;")
         status_box.addWidget(self.status_icon)
         status_box.addWidget(self.status_text)
         status_box.addStretch()
+
+        self.playtime_label = QLabel(f"Total Playtime: {engine.get_total_playtime_formatted()}")
+        self.playtime_label.setObjectName("MutedText")
+        status_box.addWidget(self.playtime_label)
+
         main_layout.addLayout(status_box)
 
         # 4. Launch Dock (Minecraft Launcher Control Bar)
@@ -227,23 +249,41 @@ class PlayPage(QWidget):
             self.set_game_running(True)
             self.launch_requested.emit()
 
+    def _update_status_icon(self, online: bool, busy: bool = False):
+        if busy:
+            icon_path = ICONS_DIR / "status_busy.svg"
+        elif online:
+            icon_path = ICONS_DIR / "status_online.svg"
+        else:
+            icon_path = ICONS_DIR / "status_offline.svg"
+        if icon_path.exists():
+            pix = QPixmap(str(icon_path)).scaled(12, 12, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            self.status_icon.setPixmap(pix)
+
     def set_game_running(self, running: bool):
         self.game_running = running
         if running:
+            engine.start_session()
             self.action_button.setText("STOP")
             self.action_button.set_variant("warning")
-            self.status_icon.setStyleSheet("color: #E67E22; font-size: 13px;")
+            self._update_status_icon(False, busy=True)
             self.status_text.setText("Minecraft is running...")
         else:
+            engine.end_session()
             self.action_button.setText("PLAY")
             self.action_button.set_variant("accent")
-            self.status_icon.setStyleSheet("color: #2ECC71; font-size: 13px;")
+            self._update_status_icon(True)
             self.status_text.setText("Ready to play")
+            self.playtime_label.setText(f"Total Playtime: {engine.get_total_playtime_formatted()}")
 
     def _check_game_running(self):
         is_running = engine.is_game_running()
         if is_running != self.game_running:
             self.set_game_running(is_running)
+        elif self.game_running:
+            self.playtime_label.setText(
+                f"Session: {engine.get_session_playtime_formatted()} | Total: {engine.get_total_playtime_formatted()}"
+            )
 
     def _on_mangohud_toggled(self, checked: bool):
         env = engine.get_setting("custom_env", "")

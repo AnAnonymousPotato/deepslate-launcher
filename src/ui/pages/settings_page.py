@@ -35,7 +35,7 @@ class SettingsPage(QWidget):
         # Tabbed settings
         self.tabs = QTabWidget()
         self.tabs.addTab(self._build_general_tab(), "General")
-        self.tabs.addTab(self._build_graphics_tab(), "Graphics && Engine")
+        self.tabs.addTab(self._build_graphics_tab(), "Graphics + Engine")
         self.tabs.addTab(self._build_storage_tab(), "Storage")
         
         main_layout.addWidget(self.tabs)
@@ -56,7 +56,7 @@ class SettingsPage(QWidget):
         self.close_on_launch_cb.toggled.connect(lambda v: engine.set_setting("close_on_launch", v))
         layout.addWidget(self.close_on_launch_cb)
 
-        self.show_betas_cb = QCheckBox("Show Bedrock Preview & Beta editions")
+        self.show_betas_cb = QCheckBox("Show Bedrock Preview and Beta editions")
         self.show_betas_cb.setChecked(engine.get_setting("show_betas", True))
         self.show_betas_cb.toggled.connect(lambda v: engine.set_setting("show_betas", v))
         layout.addWidget(self.show_betas_cb)
@@ -104,7 +104,7 @@ class SettingsPage(QWidget):
         layout.setContentsMargins(16, 16, 16, 16)
         layout.setSpacing(14)
 
-        g_hdr = QLabel("Engine & Graphics")
+        g_hdr = QLabel("Engine and Graphics")
         g_hdr.setObjectName("SectionHeader")
         layout.addWidget(g_hdr)
 
@@ -126,12 +126,12 @@ class SettingsPage(QWidget):
         has_crash = engine.has_gpu_crash_marker()
         self.gpu_status_lbl = QLabel(
             "⚠️ GPU crash detected from a previous run. Launching may be blocked." if has_crash
-            else "✓ Graphics driver state is healthy."
+            else "[OK] Graphics driver state is healthy."
         )
         self.gpu_status_lbl.setStyleSheet("color: #E67E22;" if has_crash else "color: #2ECC71;")
         layout.addWidget(self.gpu_status_lbl)
 
-        ack_btn = OreButton("Acknowledge & Clear GPU Crash Marker")
+        ack_btn = OreButton("Acknowledge and Clear GPU Crash Marker")
         ack_btn.clicked.connect(self._on_ack_gpu)
         layout.addWidget(ack_btn)
 
@@ -144,7 +144,7 @@ class SettingsPage(QWidget):
         layout.setContentsMargins(16, 16, 16, 16)
         layout.setSpacing(14)
 
-        s_hdr = QLabel("Data & Storage Location")
+        s_hdr = QLabel("Data and Storage Location")
         s_hdr.setObjectName("SectionHeader")
         layout.addWidget(s_hdr)
 

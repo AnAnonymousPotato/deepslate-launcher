@@ -37,14 +37,14 @@ class ToolsPage(QWidget):
         main_layout.setContentsMargins(18, 14, 18, 14)
         main_layout.setSpacing(12)
 
-        title = QLabel("TOOLS & DIAGNOSTICS")
+        title = QLabel("TOOLS")
         title.setObjectName("PageTitle")
         main_layout.addWidget(title)
 
-        # Tabs: Doctor & Network | Maintenance & Import
+        # Tabs: Diagnostics | Bedrock Data + Maintenance
         tabs = QTabWidget()
         tabs.addTab(self._build_diag_tab(), "Diagnostics")
-        tabs.addTab(self._build_maintenance_tab(), "Maintenance && Import")
+        tabs.addTab(self._build_maintenance_tab(), "Bedrock Data + Maintenance")
         main_layout.addWidget(tabs)
 
     def _build_diag_tab(self) -> QWidget:
@@ -78,7 +78,36 @@ class ToolsPage(QWidget):
         layout.setContentsMargins(16, 16, 16, 16)
         layout.setSpacing(14)
 
-        # 1. Content Import
+        # 1. Bedrock Folders & Backups
+        f_hdr = QLabel("Bedrock Folders + Backups")
+        f_hdr.setObjectName("SectionHeader")
+        layout.addWidget(f_hdr)
+
+        f_desc = QLabel("Quickly access worlds, screenshots, skins, or export an archive backup.")
+        f_desc.setObjectName("MutedText")
+        layout.addWidget(f_desc)
+
+        f_btn_row = QHBoxLayout()
+        worlds_btn = OreButton("Worlds Folder")
+        worlds_btn.clicked.connect(lambda: engine.open_mojang_subfolder("minecraftWorlds"))
+        f_btn_row.addWidget(worlds_btn)
+
+        shots_btn = OreButton("Screenshots Folder")
+        shots_btn.clicked.connect(lambda: engine.open_mojang_subfolder("Screenshots"))
+        f_btn_row.addWidget(shots_btn)
+
+        skins_btn = OreButton("Skins Folder")
+        skins_btn.clicked.connect(lambda: engine.open_mojang_subfolder("custom_skins"))
+        f_btn_row.addWidget(skins_btn)
+
+        backup_btn = OreButton("Backup Worlds (ZIP)", variant="accent")
+        backup_btn.clicked.connect(self._backup_worlds)
+        f_btn_row.addWidget(backup_btn)
+
+        f_btn_row.addStretch()
+        layout.addLayout(f_btn_row)
+
+        # 2. Content Import
         c_hdr = QLabel("Import Content")
         c_hdr.setObjectName("SectionHeader")
         layout.addWidget(c_hdr)
@@ -92,7 +121,7 @@ class ToolsPage(QWidget):
         layout.addWidget(import_btn)
 
         # 2. Desktop Shortcut
-        s_hdr = QLabel("Desktop & Steam Shortcut")
+        s_hdr = QLabel("Desktop and Steam Shortcut")
         s_hdr.setObjectName("SectionHeader")
         layout.addWidget(s_hdr)
 
@@ -168,3 +197,18 @@ class ToolsPage(QWidget):
                 QMessageBox.information(self, "Reset Complete", "Wine prefix reset successfully.")
             except Exception as exc:
                 QMessageBox.critical(self, "Error", str(exc))
+
+    def _backup_worlds(self):
+        try:
+            out_zip = engine.backup_worlds()
+            if out_zip:
+                QMessageBox.information(
+                    self,
+                    "Backup Created",
+                    f"Successfully created backup of all Minecraft Bedrock worlds:\n\n{out_zip}"
+                )
+            else:
+                QMessageBox.warning(self, "Backup Warning", "Could not locate minecraftWorlds folder to backup.")
+        except Exception as exc:
+            QMessageBox.critical(self, "Backup Failed", str(exc))
+

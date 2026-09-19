@@ -262,6 +262,89 @@ class Engine:
         except Exception:
             return False
 
+    # --------------------------------------------------------------------------
+    # Playtime Tracking & User Folders
+    # --------------------------------------------------------------------------
+    def start_session(self) -> None:
+        import time
+        self.session_start_time = time.time()
+
+    def end_session(self) -> None:
+        import time
+        if hasattr(self, "session_start_time") and self.session_start_time:
+            elapsed = int(time.time() - self.session_start_time)
+            cur = int(self.get_setting("playtime_seconds", 0))
+            self.set_setting("playtime_seconds", cur + elapsed)
+            self.session_start_time = None
+
+    def get_total_playtime_formatted(self) -> str:
+        sec = int(self.get_setting("playtime_seconds", 0))
+        h = sec // 3600
+        m = (sec % 3600) // 60
+        if h > 0:
+            return f"{h}h {m}m"
+        return f"{m}m"
+
+    def get_session_playtime_formatted(self) -> str:
+        import time
+        if hasattr(self, "session_start_time") and self.session_start_time:
+            sec = int(time.time() - self.session_start_time)
+            h = sec // 3600
+            m = (sec % 3600) // 60
+            s = sec % 60
+            if h > 0:
+                return f"{h}h {m}m"
+            return f"{m}m {s}s"
+        return "0m"
+
+    def get_mojang_dir(self) -> Optional[Path]:
+        """Find the com.mojang data folder inside the active Wine prefix."""
+        base = DATA / "compatdata" / "pfx" / "drive_c" / "users" / "steamuser" / "AppData" / "Roaming" / "Minecraft Bedrock" / "Users"
+        if base.is_dir():
+            matches = list(base.glob("*/games/com.mojang"))
+            # Prefer non-Shared if exists
+            for m in matches:
+                if m.is_dir() and "Shared" not in str(m):
+                    return m
+            if matches and matches[0].is_dir():
+                return matches[0]
+        return None
+
+    def open_mojang_subfolder(self, subfolder: str = "minecraftWorlds") -> bool:
+        import subprocess
+        mojang = self.get_mojang_dir()
+        if mojang:
+            target = mojang / subfolder
+            target.mkdir(parents=True, exist_ok=True)
+            subprocess.Popen(["xdg-open", str(target)])
+            return True
+        return False
+
+    def backup_worlds(self, dest_dir: Optional[Path] = None) -> Optional[Path]:
+        """Create a .zip archive backup of the user's minecraftWorlds directory."""
+        import zipfile
+        import time
+        mojang = self.get_mojang_dir()
+        if not mojang:
+            return None
+        worlds_dir = mojang / "minecraftWorlds"
+        if not worlds_dir.is_dir():
+            return None
+
+        out_dir = dest_dir or Path.home()
+        timestamp = time.strftime("%Y%m%d_%H%M%S")
+        out_zip = out_dir / f"Minecraft_Bedrock_Worlds_{timestamp}.zip"
+
+        with zipfile.ZipFile(out_zip, "w", zipfile.ZIP_DEFLATED) as zf:
+            for root, _, files in os.walk(worlds_dir):
+                for file in files:
+                    file_path = Path(root) / file
+                    arcname = file_path.relative_to(worlds_dir)
+                    zf.write(file_path, arcname)
+
+        return out_zip
+
 
 # Singleton instance
 engine = Engine()
+
