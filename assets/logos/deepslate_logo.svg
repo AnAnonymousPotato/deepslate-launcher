@@ -1,8 +1,8 @@
 <svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <radialGradient id="emeraldGlow" cx="50%" cy="50%" r="50%">
-      <stop offset="0%" stop-color="#3B8526" stop-opacity="0.45"/>
-      <stop offset="60%" stop-color="#236212" stop-opacity="0.15"/>
+      <stop offset="0%" stop-color="#3B8526" stop-opacity="0.5"/>
+      <stop offset="65%" stop-color="#236212" stop-opacity="0.2"/>
       <stop offset="100%" stop-color="#161718" stop-opacity="0"/>
     </radialGradient>
     <linearGradient id="cBright" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -33,10 +33,14 @@
       <stop offset="100%" stop-color="#16171A"/>
     </linearGradient>
   </defs>
-  <circle cx="128" cy="128" r="120" fill="url(#emeraldGlow)"/>
-  <polygon points="128,16 225,72 225,184 128,240 31,184 31,72" fill="#1C1D1E" stroke="#39393B" stroke-width="4" stroke-linejoin="round"/>
-  <polygon points="128,24 218,76 218,180 128,232 38,180 38,76" fill="#141516" stroke="#0E0E0F" stroke-width="2" stroke-linejoin="round"/>
-  <!-- Isometric Block Group -->
+
+  <!-- Squircle Base with Glow -->
+  <rect x="10" y="10" width="236" height="236" rx="54" ry="54" fill="#18191A" stroke="#39393B" stroke-width="4"/>
+  <rect x="14" y="14" width="228" height="228" rx="50" ry="50" fill="#131415" stroke="#0E0E0F" stroke-width="2"/>
+  <rect x="16" y="16" width="224" height="224" rx="48" ry="48" fill="url(#emeraldGlow)"/>
+
+  <!-- Scaled Isometric Block Group -->
+  <g transform="translate(128, 128) scale(1.28) translate(-128, -128)">
   <g id="isometric_block">
     <polygon points="128,128 198,88 128,48 58,88" fill="url(#deepslateTop)"/>
     <polygon points="128,128 58,88 58,168 128,208" fill="url(#deepslateLeft)"/>
@@ -76,5 +80,6 @@
     <polygon points="128,128 198,88 128,48 58,88" fill="none" stroke="#0E0E0F" stroke-width="3" stroke-linejoin="round"/>
     <polygon points="128,128 58,88 58,168 128,208" fill="none" stroke="#0E0E0F" stroke-width="3" stroke-linejoin="round"/>
     <polygon points="128,128 198,88 198,168 128,208" fill="none" stroke="#0E0E0F" stroke-width="3" stroke-linejoin="round"/>
+  </g>
   </g>
 </svg>

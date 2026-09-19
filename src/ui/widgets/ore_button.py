@@ -37,11 +37,7 @@ class OreButton(QPushButton):
         return self._raw_text
 
     def _update_text(self):
-        if not self.icon().isNull() and self._raw_text:
-            cleaned = self._raw_text.strip()
-            super().setText(f"  {cleaned}")
-        else:
-            super().setText(self._raw_text)
+        super().setText(self._raw_text)
 
     def set_variant(self, variant: str):
         self.variant = variant

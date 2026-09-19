@@ -76,7 +76,7 @@ class Sidebar(QFrame):
         ]
         
         for key, label, icon_name in nav_items:
-            btn = QPushButton(f"  {label}")
+            btn = QPushButton(label)
             btn.setObjectName("SidebarNavButton")
             icon_path = ORE_ICONS / icon_name
             if not icon_path.exists():

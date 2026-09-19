@@ -39,7 +39,7 @@ def format_markdown_to_html(md_text: str) -> str:
     }}
     h1, h2 {{
         color: #55FF55;
-        font-family: "Minecraft", "Mojangles", sans-serif;
+        font-family: "Minecraft Default", "Minecraft", sans-serif;
         font-size: 17px;
         border-bottom: 2px solid #2B2C2E;
         padding-bottom: 6px;
@@ -48,7 +48,7 @@ def format_markdown_to_html(md_text: str) -> str:
     }}
     h3, h4 {{
         color: #7FE0A0;
-        font-family: "Minecraft", "Mojangles", sans-serif;
+        font-family: "Minecraft Default", "Minecraft", sans-serif;
         font-size: 13px;
         margin-top: 14px;
         margin-bottom: 6px;
