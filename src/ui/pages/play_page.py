@@ -116,7 +116,8 @@ class PlayPage(QWidget):
         self.mangohud_cb.setChecked("MANGOHUD=1" in engine.get_setting("custom_env", ""))
         self.mangohud_cb.toggled.connect(self._on_mangohud_toggled)
 
-        self.rtx_cb = QCheckBox("Ray Tracing (DXR 1.1)")
+        self.rtx_cb = QCheckBox("Ray Tracing")
+        self.rtx_cb.setToolTip("DirectX Raytracing (DXR 1.1 / VKD3D)")
         self.rtx_cb.setChecked(engine.get_setting("vkd3d_proton", True))
         self.rtx_cb.toggled.connect(self._on_rtx_toggled)
 

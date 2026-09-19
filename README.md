@@ -16,7 +16,7 @@ Designed with inspiration from the **Official Minecraft Launcher** layout and th
 - **💎 Bedrock Ore UI (Dark Emerald) Theming**:
   - Stone-slate palette (`#161718`, `#202122`, `#303133`).
   - Pixel-perfect 9-slice beveled buttons, switches, and checkboxes.
-  - Mojangles and Minecraftia pixel typography.
+  - Authentic Minecraft pixel typography.
   - Emerald green highlights (`#4B9736` / `#2ECC71`).
 - **📦 Complete Version & Installation Manager**:
   - Browse downloaded builds with disk usage, path, and active edition badges.

@@ -15,28 +15,28 @@ ICONS_DIR = ASSETS_DIR / "icons"
 IMAGES_DIR = ASSETS_DIR / "images"
 
 def init_fonts():
-    """Register Mojangles and Minecraftia fonts with Qt."""
+    """Register pixel fonts with Qt."""
     for font_file in FONTS_DIR.glob("*.*tf"):
         QFontDatabase.addApplicationFont(str(font_file))
     
     app = QApplication.instance()
     if app:
-        font = QFont("Mojangles", 11)
+        font = QFont("Minecraft", 11)
         app.setFont(font)
 
 def get_font(size: int = 12, bold: bool = False) -> QFont:
-    """Return Mojangles font."""
+    """Return primary Minecraft font."""
     families = QFontDatabase.families()
-    family = "Mojangles" if "Mojangles" in families else "sans-serif"
+    family = "Minecraft" if "Minecraft" in families else ("Mojangles" if "Mojangles" in families else "sans-serif")
     font = QFont(family, size)
     if bold:
         font.setBold(True)
     return font
 
 def get_pixel_font(size: int = 10) -> QFont:
-    """Return Minecraftia font."""
+    """Return pixel font."""
     families = QFontDatabase.families()
-    family = "Minecraftia" if "Minecraftia" in families else "monospace"
+    family = "Minecraft" if "Minecraft" in families else ("Monocraft" if "Monocraft" in families else "monospace")
     return QFont(family, size)
 
 def generate_qss() -> str:
@@ -49,7 +49,7 @@ def generate_qss() -> str:
        ========================================================================= */
     
     * {{
-        font-family: "Mojangles", "Noto Sans", sans-serif;
+        font-family: "Minecraft", "Mojangles", "Noto Sans", sans-serif;
         color: #E0E0E0;
     }}
 
@@ -105,7 +105,7 @@ def generate_qss() -> str:
 
     /* --- Ore UI Buttons --- */
     QPushButton, QToolButton {{
-        font-family: "Mojangles", sans-serif;
+        font-family: "Minecraft", "Mojangles", sans-serif;
         font-size: 13px;
         color: #FFFFFF;
         background-color: #39393B;
@@ -268,7 +268,7 @@ def generate_qss() -> str:
     QMenu::item {{
         padding: 6px 18px 6px 10px;
         color: #FFFFFF;
-        font-family: "Mojangles";
+        font-family: "Minecraft", "Mojangles";
         font-size: 11px;
         border-radius: 0px;
     }}
@@ -367,7 +367,7 @@ def generate_qss() -> str:
         background-color: #121314;
         border: 2px solid #2B2C2E;
         color: #A3E49B;
-        font-family: "Minecraftia", monospace;
+        font-family: "Minecraft", "Monocraft", monospace;
         font-size: 11px;
         padding: 8px;
     }}

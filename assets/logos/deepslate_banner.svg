@@ -105,14 +105,14 @@
   <!-- Typography on Right -->
   <g transform="translate(260, 50)">
     <!-- Main Title with Shadow -->
-    <text x="3" y="53" font-family="'Mojangles', sans-serif" font-size="44" font-weight="900" fill="#0E0E0F" letter-spacing="2">DEEPSLATE</text>
-    <text x="0" y="50" font-family="'Mojangles', sans-serif" font-size="44" font-weight="900" fill="#FFFFFF" letter-spacing="2">DEEPSLATE</text>
+    <text x="3" y="53" font-family="'Minecraft', 'Mojangles', sans-serif" font-size="44" font-weight="900" fill="#0E0E0F" letter-spacing="2">DEEPSLATE</text>
+    <text x="0" y="50" font-family="'Minecraft', 'Mojangles', sans-serif" font-size="44" font-weight="900" fill="#FFFFFF" letter-spacing="2">DEEPSLATE</text>
 
     <!-- Subtitle Badge -->
     <rect x="0" y="72" width="240" height="26" fill="#1A3814" stroke="#3B8526" stroke-width="1.5"/>
-    <text x="12" y="90" font-family="'Mojangles', sans-serif" font-size="12" font-weight="bold" fill="#70B95C" letter-spacing="1.5">BEDROCK EDITION LAUNCHER</text>
+    <text x="12" y="90" font-family="'Minecraft', 'Mojangles', sans-serif" font-size="12" font-weight="bold" fill="#70B95C" letter-spacing="1.5">BEDROCK EDITION LAUNCHER</text>
 
     <!-- Tagline -->
-    <text x="0" y="130" font-family="'Mojangles', sans-serif" font-size="13" fill="#A0A0A0">Modern Ore UI Frontend • Bedrock on Linux</text>
+    <text x="0" y="130" font-family="'Minecraft', 'Mojangles', sans-serif" font-size="13" fill="#A0A0A0">Modern Ore UI Frontend • Bedrock on Linux</text>
   </g>
 </svg>
