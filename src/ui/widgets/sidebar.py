@@ -26,7 +26,7 @@ class Sidebar(QFrame):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setObjectName("Sidebar")
-        self.setFixedWidth(230)
+        self.setFixedWidth(240)
         
         layout = QVBoxLayout(self)
         layout.setContentsMargins(12, 16, 12, 16)
@@ -35,21 +35,24 @@ class Sidebar(QFrame):
         # 1. Branding Header
         header_widget = QWidget()
         header_layout = QHBoxLayout(header_widget)
-        header_layout.setContentsMargins(4, 4, 4, 12)
+        header_layout.setContentsMargins(2, 2, 2, 10)
         header_layout.setSpacing(10)
         
-        bedrock_icon_path = ICONS_DIR / "bedrock.png"
+        app_icon_path = ICONS_DIR / "app_icon.png"
+        if not app_icon_path.exists():
+            app_icon_path = ICONS_DIR / "bedrock.png"
+            
         icon_label = QLabel()
-        if bedrock_icon_path.exists():
-            pix = QPixmap(str(bedrock_icon_path)).scaled(32, 32, Qt.KeepAspectRatio, Qt.FastTransformation)
+        if app_icon_path.exists():
+            pix = QPixmap(str(app_icon_path)).scaled(36, 36, Qt.KeepAspectRatio, Qt.SmoothTransformation)
             icon_label.setPixmap(pix)
         
         title_box = QVBoxLayout()
-        title_box.setSpacing(0)
+        title_box.setSpacing(2)
         title_label = QLabel("DEEPSLATE")
-        title_label.setStyleSheet("font-size: 16px; font-weight: bold; color: #FFFFFF; letter-spacing: 1px;")
-        sub_label = QLabel("Bedrock Edition")
-        sub_label.setStyleSheet("font-size: 10px; color: #70B95C; font-weight: bold;")
+        title_label.setStyleSheet("font-family: \"Mojangles\", sans-serif; font-size: 16px; font-weight: bold; color: #FFFFFF; letter-spacing: 1px;")
+        sub_label = QLabel("Bedrock Edition Launcher")
+        sub_label.setStyleSheet("font-family: \"Mojangles\", sans-serif; font-size: 9px; color: #70B95C; font-weight: bold;")
         title_box.addWidget(title_label)
         title_box.addWidget(sub_label)
         
