@@ -34,10 +34,8 @@ def get_font(size: int = 12, bold: bool = False) -> QFont:
     return font
 
 def get_pixel_font(size: int = 10) -> QFont:
-    """Return Minecraftia font."""
-    families = QFontDatabase.families()
-    family = "Minecraftia" if "Minecraftia" in families else "monospace"
-    return QFont(family, size)
+    """Return monospace font for logs/console."""
+    return QFont("monospace", size)
 
 def generate_qss() -> str:
     """Generate the full Ore UI Dark Emerald QSS stylesheet."""
@@ -367,7 +365,7 @@ def generate_qss() -> str:
         background-color: #121314;
         border: 2px solid #2B2C2E;
         color: #A3E49B;
-        font-family: "Minecraftia", monospace;
+        font-family: monospace;
         font-size: 11px;
         padding: 8px;
     }}
