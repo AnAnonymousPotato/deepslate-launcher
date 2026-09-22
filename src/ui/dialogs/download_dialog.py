@@ -36,6 +36,8 @@ class DownloadWorker(QThread):
             )
             self.finished.emit(True, "Installation complete.")
         except Exception as exc:
+            import traceback
+            traceback.print_exc()
             self.finished.emit(False, str(exc))
 
 

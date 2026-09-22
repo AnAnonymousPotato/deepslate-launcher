@@ -169,16 +169,28 @@ class Engine:
             return remove_build(Path(match["path"]))
         return 0
 
+    def _resolve_edition(self, edition: Any) -> Optional[Dict[str, Any]]:
+        """Resolve edition string or dict to the full edition dict required by bol."""
+        if isinstance(edition, dict) and "id" in edition:
+            return edition
+        ed_str = str(edition or "release").strip().lower()
+        all_eds = list_editions(include_beta=True)
+        for ed in all_eds:
+            if ed.get("id", "").lower() == ed_str:
+                return ed
+        return all_eds[0] if all_eds else None
+
     def install_build(
         self,
-        edition: str,
+        edition: Any = "release",
         version: Optional[str] = None,
         force: bool = False,
         progress_cb: Optional[Callable[[int, int], None]] = None
-    ) -> str:
+    ) -> None:
         """Download and install a Bedrock build with real-time progress callbacks."""
+        ed_obj = self._resolve_edition(edition)
         return do_setup(
-            mc_edition=edition,
+            mc_edition=ed_obj,
             mc_version=version,
             force=force,
             progress=progress_cb
