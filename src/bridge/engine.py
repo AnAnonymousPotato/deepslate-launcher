@@ -35,7 +35,10 @@ from bol.profiles import (
     rename_profile, write_play_shortcut, write_profile_shortcut
 )
 from bol.content import import_content
-from bol.util import load_settings as bol_load_settings, save_settings as bol_save_settings
+from bol.util import (
+    load_settings as bol_load_settings, save_settings as bol_save_settings,
+    format_display_version
+)
 from .cli_bridge import run_cli_command
 
 
@@ -83,13 +86,76 @@ class Engine:
             print(f"[Deepslate] Error fetching installed builds: {exc}", file=sys.stderr)
             return []
 
-    def get_available_versions(self, edition: str = "release", beta: bool = False, refresh: bool = False) -> List[str]:
-        """Fetch available remote builds from Microsoft Store/Xbox index."""
+    @staticmethod
+    def parse_version_tuple(ver_str: str) -> tuple:
+        """Convert a version string like '1.26.51.1' to a comparable integer tuple."""
+        if not ver_str:
+            return (0,)
+        clean = str(ver_str).lstrip("v").strip()
+        parts = []
+        for x in clean.split("."):
+            if x.isdigit():
+                parts.append(int(x))
+            else:
+                break
+        return tuple(parts) if parts else (0,)
+
+    def get_available_versions(self, edition: str = "release", refresh: bool = False) -> List[Dict[str, Any]]:
+        """Fetch available remote builds from Microsoft Store/Xbox catalogue."""
         try:
-            return list_versions(edition_id=edition, beta=beta, refresh=refresh)
+            raw_builds = list_versions(edition_id=edition, ignore_cache=refresh)
+            results = []
+            is_beta = (edition == "preview")
+            for b in raw_builds:
+                ver = b.get("version", "")
+                display = format_display_version(ver, is_beta=is_beta)
+                results.append({
+                    "version": ver,
+                    "display": display,
+                    "installed": b.get("installed", False),
+                    "urls": b.get("urls", [])
+                })
+            return results
         except Exception as exc:
             print(f"[Deepslate] Error fetching remote versions: {exc}", file=sys.stderr)
             return []
+
+    def check_for_game_update(self, edition: str = "release", refresh: bool = False) -> Tuple[bool, Optional[str], Optional[str], Optional[str], Optional[str]]:
+        """Check if a newer stable release is available compared to the current active install.
+        
+        Returns: (has_update, latest_version, latest_display, current_version, current_display)
+        """
+        try:
+            available = self.get_available_versions(edition=edition, refresh=refresh)
+            if not available:
+                return False, None, None, None, None
+            
+            latest_entry = available[0]
+            latest_ver = latest_entry["version"]
+            latest_display = latest_entry["display"]
+            
+            # Find current active version
+            current_ver = self.get_setting("mc_version", "")
+            if not current_ver:
+                cur_dir = self.get_setting("game_dir", "")
+                for b in self.get_installed_builds():
+                    if str(b.get("path")) == cur_dir:
+                        current_ver = b.get("version", "")
+                        break
+            
+            if not current_ver:
+                return False, None, None, None, None
+
+            current_display = format_display_version(current_ver, is_beta=False)
+            
+            latest_tuple = self.parse_version_tuple(latest_ver)
+            current_tuple = self.parse_version_tuple(current_ver)
+            
+            has_update = latest_tuple > current_tuple
+            return has_update, latest_ver, latest_display, current_ver, current_display
+        except Exception as exc:
+            print(f"[Deepslate] Error checking game update: {exc}", file=sys.stderr)
+            return False, None, None, None, None
 
     def remove_version(self, target_path_or_version: str, edition_id: Optional[str] = None) -> int:
         """Delete an installed build and return freed bytes."""

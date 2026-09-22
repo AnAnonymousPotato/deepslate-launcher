@@ -9,41 +9,18 @@ from pathlib import Path
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QScrollArea,
     QFrame, QMessageBox, QDialog, QComboBox, QCheckBox,
-    QProgressBar, QSizePolicy
+    QProgressBar, QSizePolicy, QLineEdit, QListWidget, QListWidgetItem
 )
 from PySide6.QtCore import Qt, Signal, QThread, QSize
-from PySide6.QtGui import QCursor, QIcon
+from PySide6.QtGui import QCursor, QIcon, QColor
 
 from src.bridge.engine import engine
 from src.ui.theme import ICONS_DIR
 from ..widgets.ore_button import OreButton
+from ..widgets.update_banner import UpdateBanner
+from ..dialogs.download_dialog import DownloadDialog, DownloadWorker
 
 ORE_ICONS = ICONS_DIR / "ore"
-
-class DownloadWorker(QThread):
-    progress = Signal(int, int) # done, total
-    finished = Signal(bool, str)
-
-    def __init__(self, edition: str, version: str, force: bool):
-        super().__init__()
-        self.edition = edition
-        self.version = version
-        self.force = force
-
-    def run(self):
-        try:
-            def _cb(done, total):
-                self.progress.emit(int(done or 0), int(total or 0))
-
-            engine.install_build(
-                edition=self.edition,
-                version=self.version if self.version != "latest" else None,
-                force=self.force,
-                progress_cb=_cb
-            )
-            self.finished.emit(True, "Installation complete.")
-        except Exception as exc:
-            self.finished.emit(False, str(exc))
 
 
 class InstallationsPage(QWidget):
@@ -70,7 +47,7 @@ class InstallationsPage(QWidget):
         if ref_icon.exists():
             self.refresh_btn.setIcon(QIcon(str(ref_icon)))
             self.refresh_btn.setIconSize(QSize(16, 16))
-        self.refresh_btn.clicked.connect(self.populate_builds)
+        self.refresh_btn.clicked.connect(self._on_refresh_clicked)
         header.addWidget(self.refresh_btn)
 
         self.new_install_btn = OreButton("New Installation", variant="accent")
@@ -82,6 +59,11 @@ class InstallationsPage(QWidget):
         header.addWidget(self.new_install_btn)
 
         main_layout.addLayout(header)
+
+        # Update Banner (shown when newer release is available)
+        self.update_banner = UpdateBanner(self)
+        self.update_banner.update_requested.connect(self._start_easy_update)
+        main_layout.addWidget(self.update_banner)
 
         # Scroll Area for Build Cards
         self.scroll = QScrollArea()
@@ -99,6 +81,10 @@ class InstallationsPage(QWidget):
 
         self.populate_builds()
 
+    def _on_refresh_clicked(self):
+        self.populate_builds()
+        self.update_banner.check_updates_async(refresh=True)
+
     def populate_builds(self):
         """Clear and repopulate the list of installed builds."""
         # Clear existing cards except spacer
@@ -113,6 +99,33 @@ class InstallationsPage(QWidget):
         for build in builds:
             card = self._create_build_card(build, cur_game_dir)
             self.cards_layout.insertWidget(self.cards_layout.count() - 1, card)
+
+        self.update_banner.check_updates_async()
+
+    def _start_easy_update(self, target_version: str):
+        dlg = DownloadDialog(
+            edition="release",
+            version=target_version,
+            display_name=f"Minecraft Bedrock v{target_version}",
+            parent=self
+        )
+        if dlg.exec():
+            # Activate the new build
+            for b in engine.get_installed_builds():
+                if b.get("version") == target_version:
+                    engine.set_setting("game_dir", str(b.get("path")))
+                    engine.set_setting("mc_version", target_version)
+                    if b.get("edition"):
+                        engine.set_setting("mc_edition", b.get("edition"))
+                    self.version_activated.emit(target_version)
+                    break
+            self.populate_builds()
+            self.update_banner.hide()
+            QMessageBox.information(
+                self,
+                "Update Complete",
+                f"Successfully updated to Minecraft Bedrock v{target_version}!\n\nYour worlds, player data, and settings remain untouched."
+            )
 
     def _create_build_card(self, build: dict, cur_game_dir: str) -> QFrame:
         card = QFrame()
@@ -208,83 +221,159 @@ class InstallationsPage(QWidget):
     def _show_install_dialog(self):
         dlg = QDialog(self)
         dlg.setWindowTitle("Install Minecraft Bedrock")
-        dlg.setFixedWidth(420)
+        dlg.setFixedWidth(460)
         
         dlg_layout = QVBoxLayout(dlg)
-        dlg_layout.setContentsMargins(18, 18, 18, 18)
+        dlg_layout.setContentsMargins(20, 20, 20, 20)
         dlg_layout.setSpacing(12)
 
-        dlg_layout.addWidget(QLabel("Select Edition:"))
+        # Edition Selection
+        ed_box = QHBoxLayout()
+        ed_lbl = QLabel("Edition:")
+        ed_lbl.setStyleSheet("font-weight: bold;")
+        ed_box.addWidget(ed_lbl)
+        
         edition_combo = QComboBox()
         edition_combo.addItems(["release", "preview"])
-        dlg_layout.addWidget(edition_combo)
+        ed_box.addWidget(edition_combo, 1)
+        dlg_layout.addLayout(ed_box)
 
-        dlg_layout.addWidget(QLabel("Version (or 'latest'):"))
-        ver_combo = QComboBox()
-        ver_combo.addItem("latest")
-        dlg_layout.addWidget(ver_combo)
+        # Search / Filter Bar + Refresh Catalogue Button
+        filter_box = QHBoxLayout()
+        search_input = QLineEdit()
+        search_input.setPlaceholderText("Filter versions…")
+        filter_box.addWidget(search_input, 1)
+
+        refresh_cat_btn = OreButton("")
+        refresh_icon = ORE_ICONS / "refresh.png"
+        if refresh_icon.exists():
+            refresh_cat_btn.setIcon(QIcon(str(refresh_icon)))
+            refresh_cat_btn.setIconSize(QSize(16, 16))
+        else:
+            refresh_cat_btn.setText("↻")
+        refresh_cat_btn.setToolTip("Refresh version catalogue from Microsoft (bypasses 12-hour cache)")
+        refresh_cat_btn.setFixedSize(36, 32)
+        filter_box.addWidget(refresh_cat_btn)
+        dlg_layout.addLayout(filter_box)
+
+        # Version List Widget
+        version_list = QListWidget()
+        version_list.setFixedHeight(180)
+        version_list.setStyleSheet("""
+            QListWidget {
+                background-color: #121314;
+                border: 2px solid #2B2C2E;
+                font-family: "Mojangles", sans-serif;
+                font-size: 11px;
+                padding: 4px;
+            }
+            QListWidget::item {
+                padding: 6px 8px;
+                color: #FFFFFF;
+                border-bottom: 1px solid #1E2022;
+            }
+            QListWidget::item:selected {
+                background-color: #1A3814;
+                color: #70B95C;
+            }
+        """)
+        dlg_layout.addWidget(version_list)
+
+        status_lbl = QLabel("Loading versions…")
+        status_lbl.setObjectName("MutedText")
+        status_lbl.setStyleSheet("font-size: 11px; color: #8E939C;")
+        dlg_layout.addWidget(status_lbl)
 
         force_cb = QCheckBox("Force Re-download / Rebuild")
         dlg_layout.addWidget(force_cb)
 
-        # Progress
-        progress_bar = QProgressBar()
-        progress_bar.setRange(0, 100)
-        progress_bar.hide()
-        dlg_layout.addWidget(progress_bar)
-
-        status_lbl = QLabel("")
-        status_lbl.setObjectName("MutedText")
-        dlg_layout.addWidget(status_lbl)
-
+        # Bottom Button Box
         btn_box = QHBoxLayout()
         btn_box.addStretch()
         cancel_btn = OreButton("Cancel")
         cancel_btn.clicked.connect(dlg.reject)
         btn_box.addWidget(cancel_btn)
 
-        start_btn = OreButton("Download and Install", variant="accent")
-        btn_box.addWidget(start_btn)
+        install_btn = OreButton("Download and Install", variant="accent")
+        install_btn.setEnabled(False)
+        btn_box.addWidget(install_btn)
         dlg_layout.addLayout(btn_box)
 
-        # Worker handling
-        worker = [None]
+        all_entries = []
+
+        def _populate_versions(refresh=False):
+            version_list.clear()
+            status_lbl.setText("Loading catalogue from Microsoft…")
+            edition = edition_combo.currentText()
+            
+            entries = engine.get_available_versions(edition=edition, refresh=refresh)
+            all_entries.clear()
+            
+            all_entries.append({
+                "version": "latest",
+                "label": "latest  (Auto-resolve newest)",
+                "installed": False,
+                "is_latest": False
+            })
+            
+            for idx, b in enumerate(entries):
+                ver = b["version"]
+                disp = b["display"]
+                tag = ""
+                if b.get("installed"):
+                    tag = "  [INSTALLED]"
+                elif idx == 0:
+                    tag = "  [LATEST]"
+                label = f"{ver} ({disp}){tag}"
+                all_entries.append({
+                    "version": ver,
+                    "label": label,
+                    "installed": b.get("installed", False),
+                    "is_latest": (idx == 0)
+                })
+            
+            _apply_filter(search_input.text())
+            status_lbl.setText(f"{len(entries)} versions available.")
+
+        def _apply_filter(text):
+            query = text.strip().lower()
+            version_list.clear()
+            for item in all_entries:
+                if not query or query in item["label"].lower() or query in item["version"].lower():
+                    list_item = QListWidgetItem(item["label"])
+                    list_item.setData(Qt.UserRole, item["version"])
+                    if item.get("installed"):
+                        list_item.setForeground(QColor("#70B95C"))
+                    elif item.get("is_latest"):
+                        list_item.setForeground(QColor("#55FF55"))
+                    version_list.addItem(list_item)
+            
+            if version_list.count() > 0:
+                version_list.setCurrentRow(0)
+                install_btn.setEnabled(True)
+            else:
+                install_btn.setEnabled(False)
 
         def _on_start():
+            selected = version_list.selectedItems()
+            if not selected:
+                return
+            target_version = selected[0].data(Qt.UserRole)
             edition = edition_combo.currentText()
-            version = ver_combo.currentText()
             force = force_cb.isChecked()
             
-            progress_bar.show()
-            progress_bar.setValue(0)
-            status_lbl.setText("Starting download...")
-            start_btn.setEnabled(False)
-            cancel_btn.setEnabled(False)
-
-            worker[0] = DownloadWorker(edition, version, force)
+            dlg.accept()
             
-            def _on_progress(done, total):
-                if total > 0:
-                    pct = int((done / total) * 100)
-                    progress_bar.setValue(pct)
-                    status_lbl.setText(f"Downloading: {pct}% ({done / (1024*1024):.1f} / {total / (1024*1024):.1f} MB)")
-                else:
-                    progress_bar.setRange(0, 0)
-                    status_lbl.setText("Processing packages...")
+            dl_dlg = DownloadDialog(edition, target_version, force=force, parent=self)
+            if dl_dlg.exec():
+                self.populate_builds()
 
-            def _on_finish(success, message):
-                start_btn.setEnabled(True)
-                cancel_btn.setEnabled(True)
-                if success:
-                    QMessageBox.information(dlg, "Success", "Minecraft installation finished successfully!")
-                    dlg.accept()
-                    self.populate_builds()
-                else:
-                    QMessageBox.critical(dlg, "Installation Failed", message)
+        search_input.textChanged.connect(_apply_filter)
+        edition_combo.currentIndexChanged.connect(lambda: _populate_versions(refresh=False))
+        refresh_cat_btn.clicked.connect(lambda: _populate_versions(refresh=True))
+        version_list.itemSelectionChanged.connect(lambda: install_btn.setEnabled(bool(version_list.selectedItems())))
+        version_list.itemDoubleClicked.connect(lambda: _on_start())
+        install_btn.clicked.connect(_on_start)
 
-            worker[0].progress.connect(_on_progress)
-            worker[0].finished.connect(_on_finish)
-            worker[0].start()
-
-        start_btn.clicked.connect(_on_start)
+        _populate_versions(refresh=False)
         dlg.exec()

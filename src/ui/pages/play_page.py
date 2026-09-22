@@ -10,12 +10,14 @@ from PySide6.QtWidgets import (
     QFrame, QCheckBox, QSpacerItem, QSizePolicy, QMessageBox
 )
 from typing import Optional
-from PySide6.QtCore import Qt, Signal, QTimer, QSize
+from PySide6.QtCore import Qt, Signal, QTimer, QSize, QThread
 from PySide6.QtGui import QPixmap, QCursor, QPainter, QColor, QBrush, QIcon
 from src.bridge.engine import engine
 from src.ui.theme import IMAGES_DIR, ICONS_DIR
 from ..widgets.ore_button import OreButton
 from ..widgets.splash_label import SplashLabel
+from ..widgets.update_banner import UpdateBanner
+from ..dialogs.download_dialog import DownloadDialog
 
 ORE_ICONS = ICONS_DIR / "ore"
 
@@ -148,6 +150,11 @@ class PlayPage(QWidget):
         shots_btn.clicked.connect(lambda: engine.open_mojang_subfolder("Screenshots"))
         toggles_layout.addWidget(shots_btn)
 
+        # 2. Update Banner (shown when newer release is available)
+        self.update_banner = UpdateBanner(self)
+        self.update_banner.update_requested.connect(self._start_easy_update)
+        main_layout.addWidget(self.update_banner)
+
         main_layout.addWidget(toggles_frame)
 
         # 3. Status Bar with Playtime
@@ -242,6 +249,31 @@ class PlayPage(QWidget):
             self.status_text.setText("Please install a build from the Installations tab.")
 
         self.version_combo.blockSignals(False)
+        self.update_banner.check_updates_async()
+
+    def _start_easy_update(self, target_version: str):
+        dlg = DownloadDialog(
+            edition="release",
+            version=target_version,
+            display_name=f"Minecraft Bedrock v{target_version}",
+            parent=self
+        )
+        if dlg.exec():
+            # Activate the new build
+            for b in engine.get_installed_builds():
+                if b.get("version") == target_version:
+                    engine.set_setting("game_dir", str(b.get("path")))
+                    engine.set_setting("mc_version", target_version)
+                    if b.get("edition"):
+                        engine.set_setting("mc_edition", b.get("edition"))
+                    break
+            self.refresh_versions()
+            self.update_banner.hide()
+            QMessageBox.information(
+                self,
+                "Update Complete",
+                f"Successfully updated to Minecraft Bedrock v{target_version}!\n\nYour worlds, player data, and settings remain untouched."
+            )
 
     def _on_version_selected(self, index: int):
         build = self.version_combo.currentData()
