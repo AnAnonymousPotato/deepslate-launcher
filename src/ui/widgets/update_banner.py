@@ -37,6 +37,8 @@ class UpdateBanner(QFrame):
         self.setObjectName("UpdateBanner")
         self.latest_version = ""
         self.latest_display = ""
+        self._workers: set[QThread] = set()
+        self._check_generation = 0
         
         self.setStyleSheet("""
             QFrame#UpdateBanner {
@@ -98,9 +100,22 @@ class UpdateBanner(QFrame):
         self.show()
 
     def check_updates_async(self, refresh: bool = False):
-        self._worker = UpdateCheckWorker(refresh=refresh)
-        self._worker.result_ready.connect(self._on_check_result)
-        self._worker.start()
+        self._check_generation += 1
+        gen = self._check_generation
+
+        worker = UpdateCheckWorker(refresh=refresh)
+        self._workers.add(worker)
+
+        def _handle_result(has_update: bool, latest_ver: str, latest_disp: str, cur_ver: str, cur_disp: str, g=gen):
+            if g == self._check_generation:
+                self._on_check_result(has_update, latest_ver, latest_disp, cur_ver, cur_disp)
+
+        def _cleanup(w=worker):
+            self._workers.discard(w)
+
+        worker.result_ready.connect(_handle_result)
+        worker.finished.connect(_cleanup)
+        worker.start()
 
     def _on_check_result(self, has_update: bool, latest_ver: str, latest_disp: str, cur_ver: str, cur_disp: str):
         if has_update and latest_ver and cur_ver:
@@ -115,3 +130,9 @@ class UpdateBanner(QFrame):
     def _on_dismiss_clicked(self):
         self.hide()
         self.dismissed.emit()
+
+    def closeEvent(self, event):
+        for w in list(self._workers):
+            if w.isRunning():
+                w.wait()
+        super().closeEvent(event)

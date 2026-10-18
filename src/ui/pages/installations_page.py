@@ -11,7 +11,7 @@ from PySide6.QtWidgets import (
     QFrame, QMessageBox, QDialog, QComboBox, QCheckBox,
     QProgressBar, QSizePolicy, QLineEdit, QListWidget, QListWidgetItem
 )
-from PySide6.QtCore import Qt, Signal, QThread, QSize
+from PySide6.QtCore import Qt, Signal, QThread, QSize, QTimer
 from PySide6.QtGui import QCursor, QIcon, QColor
 
 from src.bridge.engine import engine
@@ -82,16 +82,22 @@ class InstallationsPage(QWidget):
         self.populate_builds()
 
     def _on_refresh_clicked(self):
-        self.populate_builds()
-        self.update_banner.check_updates_async(refresh=True)
+        self.refresh_btn.setEnabled(False)
+        try:
+            self.populate_builds(refresh_catalogue=True)
+        finally:
+            QTimer.singleShot(600, lambda: self.refresh_btn.setEnabled(True))
 
-    def populate_builds(self):
+    def populate_builds(self, refresh_catalogue: bool = False):
         """Clear and repopulate the list of installed builds."""
         # Clear existing cards except spacer
         while self.cards_layout.count() > 1:
             item = self.cards_layout.takeAt(0)
-            if item.widget():
-                item.widget().deleteLater()
+            if item:
+                w = item.widget()
+                if w:
+                    w.setParent(None)
+                    w.deleteLater()
 
         builds = engine.get_installed_builds()
         cur_game_dir = engine.get_setting("game_dir", "")
@@ -100,7 +106,7 @@ class InstallationsPage(QWidget):
             card = self._create_build_card(build, cur_game_dir)
             self.cards_layout.insertWidget(self.cards_layout.count() - 1, card)
 
-        self.update_banner.check_updates_async()
+        self.update_banner.check_updates_async(refresh=refresh_catalogue)
 
     def _start_easy_update(self, target_version: str):
         dlg = DownloadDialog(
@@ -371,9 +377,19 @@ class InstallationsPage(QWidget):
             if dl_dlg.exec():
                 self.populate_builds()
 
+        def _on_refresh_cat():
+            refresh_cat_btn.setEnabled(False)
+            status_lbl.setText("Refreshing catalogue from Microsoft…")
+            from PySide6.QtWidgets import QApplication
+            QApplication.processEvents()
+            try:
+                _populate_versions(refresh=True)
+            finally:
+                refresh_cat_btn.setEnabled(True)
+
         search_input.textChanged.connect(_apply_filter)
         edition_combo.currentIndexChanged.connect(lambda: _populate_versions(refresh=False))
-        refresh_cat_btn.clicked.connect(lambda: _populate_versions(refresh=True))
+        refresh_cat_btn.clicked.connect(_on_refresh_cat)
         version_list.itemSelectionChanged.connect(lambda: install_btn.setEnabled(bool(version_list.selectedItems())))
         version_list.itemDoubleClicked.connect(lambda: _on_start())
         install_btn.clicked.connect(_on_start)
