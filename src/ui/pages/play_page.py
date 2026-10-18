@@ -4,14 +4,19 @@ The main Hero / Play page for Deepslate Launcher.
 """
 
 import os
+import math
+import random
 from pathlib import Path
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QComboBox,
     QFrame, QCheckBox, QSpacerItem, QSizePolicy, QMessageBox
 )
 from typing import Optional
-from PySide6.QtCore import Qt, Signal, QTimer, QSize, QThread
-from PySide6.QtGui import QPixmap, QCursor, QPainter, QColor, QBrush, QIcon
+from PySide6.QtCore import Qt, Signal, QTimer, QSize, QThread, QPoint
+from PySide6.QtGui import (
+    QPixmap, QCursor, QPainter, QColor, QBrush, QIcon,
+    QLinearGradient, QRadialGradient, QPolygon, QPen
+)
 from src.bridge.engine import engine
 from src.ui.theme import IMAGES_DIR, ICONS_DIR
 from ..widgets.ore_button import OreButton
@@ -22,7 +27,7 @@ from ..dialogs.download_dialog import DownloadDialog
 ORE_ICONS = ICONS_DIR / "ore"
 
 class HeroBannerWidget(QFrame):
-    """Hero banner with Minecraft panorama background and dark vignette overlay."""
+    """Hero banner with Minecraft panorama background, foreground isometric block diorama, and ambient embers."""
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -34,26 +39,215 @@ class HeroBannerWidget(QFrame):
         if pano_path.exists():
             self.panorama_pix = QPixmap(str(pano_path))
 
+        # Floating ambient embers
+        self.particles_enabled = engine.get_setting("ambient_particles", True)
+        self.particles = []
+        if self.particles_enabled:
+            for _ in range(16):
+                self.particles.append(self._spawn_particle(initial=True))
+            self.anim_timer = QTimer(self)
+            self.anim_timer.timeout.connect(self._tick_particles)
+            self.anim_timer.start(33) # ~30 fps
+        else:
+            self.anim_timer = None
+
+    def _spawn_particle(self, initial=False) -> dict:
+        w = max(self.width(), 700)
+        is_left = (random.random() < 0.5)
+        if is_left:
+            px = random.randint(15, 140)
+        else:
+            px = random.randint(w - 150, w - 15)
+        
+        py = random.randint(150, 290) if initial else random.randint(250, 295)
+        return {
+            "x": float(px),
+            "y": float(py),
+            "size": random.choice([2, 3, 3, 4]),
+            "alpha": float(random.randint(130, 240)),
+            "speed": random.uniform(0.4, 0.9),
+            "drift": random.uniform(-0.4, 0.4),
+            "phase": random.uniform(0, 6.28)
+        }
+
+    def _tick_particles(self):
+        if not self.isVisible() or not self.particles_enabled:
+            return
+        w = max(self.width(), 700)
+        for p in self.particles:
+            p["y"] -= p["speed"]
+            p["x"] += math.sin(p["phase"]) * 0.4
+            p["phase"] += 0.04
+            p["alpha"] -= 1.4
+            if p["y"] < 130 or p["alpha"] <= 0:
+                is_left = (random.random() < 0.5)
+                p["x"] = float(random.randint(15, 140) if is_left else random.randint(w - 150, w - 15))
+                p["y"] = float(random.randint(260, 295))
+                p["alpha"] = float(random.randint(140, 240))
+                p["speed"] = random.uniform(0.4, 0.9)
+        self.update()
+
     def paintEvent(self, event):
         super().paintEvent(event)
         painter = QPainter(self)
-        painter.setRenderHint(QPainter.SmoothPixmapTransform)
+        painter.setRenderHint(QPainter.Antialiasing, True)
+        painter.setRenderHint(QPainter.SmoothPixmapTransform, True)
 
-        # Draw panorama scaled
+        # 1. Draw panorama scaled
         if self.panorama_pix and not self.panorama_pix.isNull():
             scaled = self.panorama_pix.scaled(
                 self.size(), Qt.KeepAspectRatioByExpanding, Qt.SmoothTransformation
             )
-            # Center crop
             x = (self.width() - scaled.width()) // 2
             y = (self.height() - scaled.height()) // 2
             painter.drawPixmap(x, y, scaled)
 
-        # Dark overlay
-        painter.fillRect(self.rect(), QColor(16, 17, 18, 170))
+        # 2. Dark cavern overlay
+        painter.fillRect(self.rect(), QColor(16, 17, 18, 160))
 
-        # Border
-        painter.setPen(QColor(43, 44, 46))
+        # 3. Isometric block renderer
+        def draw_iso_block(ox, oy, size, is_emerald=False, is_bedrock=False):
+            w2 = size
+            h4 = int(size * 0.5)
+
+            top_pts = [
+                QPoint(ox, oy - h4),
+                QPoint(ox + w2, oy),
+                QPoint(ox, oy + h4),
+                QPoint(ox - w2, oy)
+            ]
+            left_pts = [
+                QPoint(ox - w2, oy),
+                QPoint(ox, oy + h4),
+                QPoint(ox, oy + h4 + size),
+                QPoint(ox - w2, oy + size)
+            ]
+            right_pts = [
+                QPoint(ox, oy + h4),
+                QPoint(ox + w2, oy),
+                QPoint(ox + w2, oy + size),
+                QPoint(ox, oy + h4 + size)
+            ]
+
+            painter.setPen(Qt.NoPen)
+            if is_emerald:
+                painter.setBrush(QColor(56, 62, 68))
+            elif is_bedrock:
+                painter.setBrush(QColor(38, 40, 44))
+            else:
+                painter.setBrush(QColor(48, 52, 58))
+            painter.drawPolygon(QPolygon(top_pts))
+
+            if is_bedrock:
+                painter.setBrush(QColor(22, 24, 26))
+            else:
+                painter.setBrush(QColor(30, 33, 37))
+            painter.drawPolygon(QPolygon(left_pts))
+
+            if is_bedrock:
+                painter.setBrush(QColor(16, 18, 20))
+            else:
+                painter.setBrush(QColor(22, 24, 27))
+            painter.drawPolygon(QPolygon(right_pts))
+
+            # Deepslate horizontal strata lines
+            painter.setPen(QPen(QColor(18, 20, 22, 120), 2))
+            painter.drawLine(ox - w2 + 4, oy + int(size * 0.35), ox - 4, oy + h4 + int(size * 0.35))
+            painter.drawLine(ox - w2 + 6, oy + int(size * 0.7), ox - 4, oy + h4 + int(size * 0.7))
+            painter.drawLine(ox + 4, oy + h4 + int(size * 0.4), ox + w2 - 4, oy + int(size * 0.4))
+            painter.drawLine(ox + 4, oy + h4 + int(size * 0.75), ox + w2 - 6, oy + int(size * 0.75))
+
+            # Edge outlines
+            painter.setPen(QPen(QColor(14, 15, 17, 200), 1))
+            painter.setBrush(Qt.NoBrush)
+            painter.drawPolygon(QPolygon(top_pts))
+            painter.drawPolygon(QPolygon(left_pts))
+            painter.drawPolygon(QPolygon(right_pts))
+
+            if is_emerald:
+                painter.setPen(Qt.NoPen)
+                # Top gem
+                painter.setBrush(QColor(85, 255, 85))
+                painter.drawPolygon(QPolygon([
+                    QPoint(ox - 2, oy - 4), QPoint(ox + 6, oy),
+                    QPoint(ox + 2, oy + 4), QPoint(ox - 6, oy)
+                ]))
+                painter.setBrush(QColor(168, 248, 154))
+                painter.drawPolygon(QPolygon([
+                    QPoint(ox - 1, oy - 2), QPoint(ox + 3, oy),
+                    QPoint(ox + 1, oy + 2), QPoint(ox - 3, oy)
+                ]))
+                # Left gem
+                painter.setBrush(QColor(35, 98, 18))
+                painter.drawPolygon(QPolygon([
+                    QPoint(ox - w2 + 8, oy + 10), QPoint(ox - w2 + 20, oy + 14),
+                    QPoint(ox - w2 + 18, oy + 26), QPoint(ox - w2 + 6, oy + 22)
+                ]))
+                painter.setBrush(QColor(85, 255, 85))
+                painter.drawPolygon(QPolygon([
+                    QPoint(ox - w2 + 10, oy + 12), QPoint(ox - w2 + 18, oy + 15),
+                    QPoint(ox - w2 + 16, oy + 23), QPoint(ox - w2 + 8, oy + 20)
+                ]))
+                painter.setBrush(QColor(168, 248, 154))
+                painter.drawPolygon(QPolygon([
+                    QPoint(ox - w2 + 12, oy + 14), QPoint(ox - w2 + 15, oy + 15),
+                    QPoint(ox - w2 + 14, oy + 19), QPoint(ox - w2 + 11, oy + 18)
+                ]))
+                # Right gem
+                painter.setBrush(QColor(35, 98, 18))
+                painter.drawPolygon(QPolygon([
+                    QPoint(ox + 6, oy + h4 + 8), QPoint(ox + 18, oy + h4 + 4),
+                    QPoint(ox + 20, oy + h4 + 18), QPoint(ox + 8, oy + h4 + 22)
+                ]))
+                painter.setBrush(QColor(85, 255, 85))
+                painter.drawPolygon(QPolygon([
+                    QPoint(ox + 8, oy + h4 + 10), QPoint(ox + 16, oy + h4 + 7),
+                    QPoint(ox + 18, oy + h4 + 16), QPoint(ox + 10, oy + h4 + 19)
+                ]))
+                painter.setBrush(QColor(168, 248, 154))
+                painter.drawPolygon(QPolygon([
+                    QPoint(ox + 10, oy + h4 + 11), QPoint(ox + 14, oy + h4 + 9),
+                    QPoint(ox + 15, oy + h4 + 14), QPoint(ox + 11, oy + h4 + 16)
+                ]))
+
+        # 4. Bottom shelf depth gradient
+        shelf_grad = QLinearGradient(0, self.height() - 80, 0, self.height())
+        shelf_grad.setColorAt(0.0, QColor(14, 15, 17, 0))
+        shelf_grad.setColorAt(0.5, QColor(14, 15, 17, 140))
+        shelf_grad.setColorAt(1.0, QColor(12, 13, 14, 250))
+        painter.fillRect(0, self.height() - 80, self.width(), 80, shelf_grad)
+
+        # 5. Draw left isometric block cluster
+        draw_iso_block(30, self.height() - 45, 34, is_emerald=True)
+        draw_iso_block(72, self.height() - 32, 28, is_emerald=False)
+        draw_iso_block(112, self.height() - 18, 26, is_emerald=False)
+        draw_iso_block(0, self.height() - 15, 38, is_bedrock=True)
+        draw_iso_block(46, self.height() - 8, 32, is_emerald=False)
+        draw_iso_block(88, self.height() - 2, 28, is_emerald=True)
+
+        # 6. Draw right isometric block cluster
+        draw_iso_block(self.width() - 35, self.height() - 45, 34, is_emerald=True)
+        draw_iso_block(self.width() - 78, self.height() - 32, 28, is_emerald=False)
+        draw_iso_block(self.width() - 118, self.height() - 18, 26, is_emerald=False)
+        draw_iso_block(self.width() - 5, self.height() - 15, 38, is_bedrock=True)
+        draw_iso_block(self.width() - 52, self.height() - 8, 32, is_emerald=False)
+        draw_iso_block(self.width() - 92, self.height() - 2, 28, is_emerald=True)
+
+        # 7. Draw floating ambient particles (embers)
+        if self.particles_enabled:
+            painter.setPen(Qt.NoPen)
+            for p in self.particles:
+                ea = max(0, min(255, int(p["alpha"])))
+                ps = p["size"]
+                painter.setBrush(QColor(85, 255, 85, ea))
+                painter.drawRect(int(p["x"]), int(p["y"]), ps, ps)
+                if ps > 2:
+                    painter.setBrush(QColor(200, 255, 200, min(255, ea + 30)))
+                    painter.drawRect(int(p["x"] + 1), int(p["y"] + 1), ps - 2, ps - 2)
+
+        # 8. Border
+        painter.setPen(QPen(QColor(43, 44, 46), 1))
+        painter.setBrush(Qt.NoBrush)
         painter.drawRect(0, 0, self.width() - 1, self.height() - 1)
         painter.end()
 
@@ -64,6 +258,7 @@ class PlayPage(QWidget):
     launch_requested = Signal()
     kill_requested = Signal()
     settings_changed = Signal()
+    open_tab_requested = Signal(str)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -107,40 +302,71 @@ class PlayPage(QWidget):
         hero_layout.addWidget(title_container, alignment=Qt.AlignCenter)
         main_layout.addWidget(hero_frame)
 
-        # 2. Quick Toggles & Folder Bar
+        # 2. Quick Toggles & Feature Cards Bar
         toggles_frame = QFrame()
         toggles_frame.setObjectName("Card")
-        toggles_layout = QHBoxLayout(toggles_frame)
-        toggles_layout.setContentsMargins(14, 8, 14, 8)
-        toggles_layout.setSpacing(18)
+        toggles_layout = QVBoxLayout(toggles_frame)
+        toggles_layout.setContentsMargins(14, 10, 14, 10)
+        toggles_layout.setSpacing(10)
+
+        # Row 1: Engine Toggles
+        engine_row = QHBoxLayout()
+        engine_row.setSpacing(18)
 
         self.mangohud_cb = QCheckBox("MangoHud")
+        self.mangohud_cb.setToolTip("Overlay FPS, frame timings, and hardware metrics")
         self.mangohud_cb.setChecked("MANGOHUD=1" in engine.get_setting("custom_env", ""))
         self.mangohud_cb.toggled.connect(self._on_mangohud_toggled)
 
-        self.rtx_cb = QCheckBox("Ray Tracing")
-        self.rtx_cb.setToolTip("DirectX Raytracing (DXR 1.1 / VKD3D)")
+        self.rtx_cb = QCheckBox("Ray Tracing (DXR)")
+        self.rtx_cb.setToolTip("DirectX Raytracing (DXR 1.1 / Universal VKD3D-Proton)")
         self.rtx_cb.setChecked(engine.get_setting("vkd3d_proton", True))
         self.rtx_cb.toggled.connect(self._on_rtx_toggled)
 
         self.wayland_cb = QCheckBox("Wayland Driver")
+        self.wayland_cb.setToolTip("Experimental native Wayland mouse capture and zero latency")
         self.wayland_cb.setChecked("BOL_INPUT=wayland" in engine.get_setting("custom_env", ""))
         self.wayland_cb.toggled.connect(self._on_wayland_toggled)
 
-        toggles_layout.addWidget(self.mangohud_cb)
-        toggles_layout.addWidget(self.rtx_cb)
-        toggles_layout.addWidget(self.wayland_cb)
-        toggles_layout.addStretch()
+        engine_row.addWidget(self.mangohud_cb)
+        engine_row.addWidget(self.rtx_cb)
+        engine_row.addWidget(self.wayland_cb)
+        engine_row.addStretch()
+        toggles_layout.addLayout(engine_row)
+
+        # Row 2: Quick Action Ore Buttons
+        actions_row = QHBoxLayout()
+        actions_row.setSpacing(10)
 
         ore_dir = ICONS_DIR / "ore"
 
-        worlds_btn = OreButton("Worlds")
+        # Shaders (BetterRTX) Quick Button
+        shaders_btn = OreButton("Shaders (RTX)")
+        shaders_icon = ore_dir / "shaderpacks.png"
+        if shaders_icon.exists():
+            shaders_btn.setIcon(QIcon(str(shaders_icon)))
+            shaders_btn.setIconSize(QSize(18, 18))
+        shaders_btn.setToolTip("Browse and install BetterRTX ray tracing presets")
+        shaders_btn.clicked.connect(lambda: self.open_tab_requested.emit("tools:shaders"))
+        actions_row.addWidget(shaders_btn)
+
+        # Backups Quick Button
+        backups_btn = OreButton("World Backups")
+        backups_icon = ore_dir / "export.png"
+        if backups_icon.exists():
+            backups_btn.setIcon(QIcon(str(backups_icon)))
+            backups_btn.setIconSize(QSize(18, 18))
+        backups_btn.setToolTip("View automated world snapshots and backups")
+        backups_btn.clicked.connect(lambda: self.open_tab_requested.emit("tools:backups"))
+        actions_row.addWidget(backups_btn)
+
+        worlds_btn = OreButton("Worlds Folder")
         worlds_icon = ore_dir / "worlds.png"
         if worlds_icon.exists():
             worlds_btn.setIcon(QIcon(str(worlds_icon)))
             worlds_btn.setIconSize(QSize(18, 18))
         worlds_btn.clicked.connect(lambda: engine.open_mojang_subfolder("minecraftWorlds"))
-        toggles_layout.addWidget(worlds_btn)
+        actions_row.addWidget(worlds_btn)
 
         shots_btn = OreButton("Screenshots")
         shots_icon = ore_dir / "screenshots.png"
@@ -148,7 +374,10 @@ class PlayPage(QWidget):
             shots_btn.setIcon(QIcon(str(shots_icon)))
             shots_btn.setIconSize(QSize(18, 18))
         shots_btn.clicked.connect(lambda: engine.open_mojang_subfolder("Screenshots"))
-        toggles_layout.addWidget(shots_btn)
+        actions_row.addWidget(shots_btn)
+
+        actions_row.addStretch()
+        toggles_layout.addLayout(actions_row)
 
         # 2. Update Banner (shown when newer release is available)
         self.update_banner = UpdateBanner(self)
@@ -184,17 +413,29 @@ class PlayPage(QWidget):
         dock_layout.setContentsMargins(14, 10, 14, 10)
         dock_layout.setSpacing(16)
 
-        # Version dropdown
+        # Block icon + Version dropdown
+        ver_container = QHBoxLayout()
+        ver_container.setSpacing(12)
+
+        ver_icon_lbl = QLabel()
+        b_icon = ORE_ICONS / "minecraft.png"
+        if not b_icon.exists():
+            b_icon = ICONS_DIR / "bedrock.png"
+        if b_icon.exists():
+            ver_icon_lbl.setPixmap(QPixmap(str(b_icon)).scaled(34, 34, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+        ver_container.addWidget(ver_icon_lbl)
+
         ver_box = QVBoxLayout()
         ver_box.setSpacing(2)
         ver_label = QLabel("INSTALLATION")
         ver_label.setObjectName("MutedText")
         self.version_combo = QComboBox()
-        self.version_combo.setMinimumWidth(260)
+        self.version_combo.setMinimumWidth(280)
         self.version_combo.currentIndexChanged.connect(self._on_version_selected)
         ver_box.addWidget(ver_label)
         ver_box.addWidget(self.version_combo)
-        dock_layout.addLayout(ver_box)
+        ver_container.addLayout(ver_box)
+        dock_layout.addLayout(ver_container)
 
         dock_layout.addStretch()
 

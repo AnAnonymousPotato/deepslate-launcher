@@ -8,7 +8,7 @@ import subprocess
 from pathlib import Path
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QTabWidget,
-    QCheckBox, QLineEdit, QFrame, QFileDialog, QMessageBox
+    QCheckBox, QLineEdit, QFrame, QFileDialog, QMessageBox, QComboBox
 )
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QCursor
@@ -66,6 +66,11 @@ class SettingsPage(QWidget):
         self.controller_cb.toggled.connect(lambda v: engine.set_setting("controller_nav", v))
         layout.addWidget(self.controller_cb)
 
+        self.particles_cb = QCheckBox("Ambient emerald embers on Hero Banner")
+        self.particles_cb.setChecked(engine.get_setting("ambient_particles", True))
+        self.particles_cb.toggled.connect(lambda v: engine.set_setting("ambient_particles", v))
+        layout.addWidget(self.particles_cb)
+
         # 2. Integrations
         i_hdr = QLabel("Integrations")
         i_hdr.setObjectName("SectionHeader")
@@ -118,6 +123,31 @@ class SettingsPage(QWidget):
         self.wayland_cb.toggled.connect(self._on_wayland_toggled)
         layout.addWidget(self.wayland_cb)
 
+        # GPU Selection
+        gpu_select_hdr = QLabel("Graphics Adapter (GPU)")
+        gpu_select_hdr.setObjectName("SectionHeader")
+        layout.addWidget(gpu_select_hdr)
+
+        gpu_desc = QLabel("Select which physical GPU Minecraft will use for rendering.")
+        gpu_desc.setObjectName("MutedText")
+        layout.addWidget(gpu_desc)
+
+        self.gpu_combo = QComboBox()
+        self.gpu_combo.addItem("Auto-detect (System Default)", "auto")
+        
+        all_gpus = engine.list_gpus()
+        cur_slot = engine.get_selected_gpu_slot()
+        active_idx = 0
+        for idx, g in enumerate(all_gpus, start=1):
+            disp = f"{g.name} ({g.slot})"
+            self.gpu_combo.addItem(disp, g.slot)
+            if g.slot == cur_slot:
+                active_idx = idx
+
+        self.gpu_combo.setCurrentIndex(active_idx)
+        self.gpu_combo.currentIndexChanged.connect(self._on_gpu_selected)
+        layout.addWidget(self.gpu_combo)
+
         # GPU Safety
         gpu_hdr = QLabel("GPU Crash Safety Barrier")
         gpu_hdr.setObjectName("SectionHeader")
@@ -137,6 +167,10 @@ class SettingsPage(QWidget):
 
         layout.addStretch()
         return widget
+
+    def _on_gpu_selected(self, index: int):
+        slot = self.gpu_combo.itemData(index)
+        engine.set_selected_gpu_slot(slot)
 
     def _build_storage_tab(self) -> QWidget:
         widget = QWidget()

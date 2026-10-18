@@ -11,7 +11,7 @@ import sys
 import json
 import threading
 from pathlib import Path
-from typing import Optional, List, Dict, Any, Callable
+from typing import Optional, List, Dict, Any, Callable, Union, Tuple
 
 # Ensure bol is available in sys.path
 from .backend_loader import ensure_backend
@@ -35,6 +35,7 @@ from bol.profiles import (
     rename_profile, write_play_shortcut, write_profile_shortcut
 )
 from bol.content import import_content
+from bol import betterrtx, saves, gpus
 from bol.util import (
     load_settings as bol_load_settings, save_settings as bol_save_settings,
     format_display_version
@@ -324,9 +325,27 @@ class Engine:
         """Reset the Wine prefix."""
         reset_prefix()
 
-    def import_game_content(self, file_paths: List[str]) -> Tuple[int, List[str]]:
-        """Import .mcpack / .mcaddon / .mcworld / .mcskin files."""
-        return import_content(file_paths)
+    def import_game_content(self, file_paths: Union[str, Path, List[Union[str, Path]]]) -> List[str]:
+        """Import .mcpack / .mcaddon / .mcworld / .mctemplate / .mcskin / .rtpack files."""
+        if isinstance(file_paths, (str, Path)):
+            file_paths = [file_paths]
+
+        results = []
+        for fp in file_paths:
+            p = Path(fp).expanduser()
+            if not p.is_file():
+                results.append(f"Skipped (not found): {p.name}")
+                continue
+            if p.suffix.lower() == ".rtpack":
+                self.install_betterrtx_rtpack(p)
+                results.append(f"RTX Shader: {p.name}")
+            else:
+                out = import_content(str(p))
+                if isinstance(out, list):
+                    results.extend(out)
+                elif out:
+                    results.append(str(out))
+        return results
 
     def ack_gpu_crash(self) -> None:
         """Clear the interrupted-launch GPU safety marker."""
@@ -421,6 +440,108 @@ class Engine:
                     zf.write(file_path, arcname)
 
         return out_zip
+
+    # --------------------------------------------------------------------------
+    # BetterRTX Presets & Shaders
+    # --------------------------------------------------------------------------
+    def get_betterrtx_status(self) -> Dict[str, Any]:
+        """Return current BetterRTX status: installed preset, uuid, material version."""
+        try:
+            return betterrtx.status()
+        except Exception as exc:
+            return {"installed": None, "uuid": None, "material_version": None, "error": str(exc)}
+
+    def list_betterrtx_presets(self) -> List[Dict[str, Any]]:
+        """List community BetterRTX ray tracing presets from bedrock.graphics."""
+        try:
+            return betterrtx.list_presets()
+        except Exception as exc:
+            print(f"[Deepslate] Error fetching BetterRTX presets: {exc}", file=sys.stderr)
+            return []
+
+    def install_betterrtx_preset(self, preset: Dict[str, Any]) -> bool:
+        """Download and install a BetterRTX preset into current Minecraft install."""
+        try:
+            betterrtx.install_preset(preset)
+            return True
+        except Exception as exc:
+            print(f"[Deepslate] Error installing BetterRTX preset: {exc}", file=sys.stderr)
+            raise
+
+    def install_betterrtx_rtpack(self, path: Path) -> bool:
+        """Install a local .rtpack shader pack."""
+        try:
+            betterrtx.install_rtpack(Path(path))
+            return True
+        except Exception as exc:
+            print(f"[Deepslate] Error installing .rtpack: {exc}", file=sys.stderr)
+            raise
+
+    def restore_vanilla_shaders(self) -> bool:
+        """Restore Mojang's vanilla ray tracing materials."""
+        try:
+            betterrtx.restore()
+            return True
+        except Exception as exc:
+            print(f"[Deepslate] Error restoring vanilla shaders: {exc}", file=sys.stderr)
+            raise
+
+    # --------------------------------------------------------------------------
+    # World Backups & Saves
+    # --------------------------------------------------------------------------
+    def list_world_backups(self) -> List[Dict[str, Any]]:
+        """List all automated and manual world backups, newest first."""
+        try:
+            return saves.list_backups()
+        except Exception as exc:
+            print(f"[Deepslate] Error listing backups: {exc}", file=sys.stderr)
+            return []
+
+    def create_world_backup(self, reason: str = "Manual snapshot") -> bool:
+        """Create an automatic snapshot backup of all worlds in active prefix."""
+        try:
+            cur_ver = self.get_setting("mc_version", None)
+            saves.back_up(edition="release", reason=reason, version=cur_ver)
+            return True
+        except Exception as exc:
+            print(f"[Deepslate] Error creating backup: {exc}", file=sys.stderr)
+            raise
+
+    def restore_world_backup(self, path: Path) -> bool:
+        """Safely restore worlds from a backup snapshot."""
+        try:
+            saves.restore_backup(Path(path))
+            return True
+        except Exception as exc:
+            print(f"[Deepslate] Error restoring backup: {exc}", file=sys.stderr)
+            raise
+
+    def copy_worlds_to_preview(self) -> bool:
+        """Copy Release worlds to Preview."""
+        try:
+            saves.copy_to_preview()
+            return True
+        except Exception as exc:
+            print(f"[Deepslate] Error copying to preview: {exc}", file=sys.stderr)
+            raise
+
+    # --------------------------------------------------------------------------
+    # Hardware & GPU Selection
+    # --------------------------------------------------------------------------
+    def list_gpus(self) -> List[Any]:
+        """List all physical GPUs detected on the host."""
+        try:
+            return gpus.list_gpus()
+        except Exception:
+            return []
+
+    def get_selected_gpu_slot(self) -> str:
+        """Get the currently configured GPU slot ('auto' or PCIe slot string)."""
+        return self.get_setting(gpus.SETTING, gpus.AUTO)
+
+    def set_selected_gpu_slot(self, slot: str) -> None:
+        """Set the GPU to use for game execution."""
+        self.set_setting(gpus.SETTING, slot)
 
 
 # Singleton instance

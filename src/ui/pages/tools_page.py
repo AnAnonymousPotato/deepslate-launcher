@@ -14,6 +14,8 @@ from PySide6.QtGui import QIcon
 from src.bridge.engine import engine
 from src.ui.theme import ICONS_DIR
 from ..widgets.ore_button import OreButton
+from ..widgets.betterrtx_view import BetterRTXView
+from ..widgets.world_backups_view import WorldBackupsView
 
 ORE_ICONS = ICONS_DIR / "ore"
 
@@ -32,7 +34,7 @@ class CommandWorker(QThread):
 
 
 class ToolsPage(QWidget):
-    """System diagnostics, prefix repair, shortcuts, and content import."""
+    """System diagnostics, BetterRTX presets, world backups, and maintenance."""
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -45,11 +47,29 @@ class ToolsPage(QWidget):
         title.setObjectName("PageTitle")
         main_layout.addWidget(title)
 
-        # Tabs: Diagnostics | Bedrock Data + Maintenance
-        tabs = QTabWidget()
-        tabs.addTab(self._build_diag_tab(), "Diagnostics")
-        tabs.addTab(self._build_maintenance_tab(), "Bedrock Data + Maintenance")
-        main_layout.addWidget(tabs)
+        # Tabs: Shaders (BetterRTX) | World Backups | Diagnostics | Maintenance
+        self.tabs = QTabWidget()
+        self.betterrtx_view = BetterRTXView(self)
+        self.backups_view = WorldBackupsView(self)
+
+        self.tabs.addTab(self.betterrtx_view, "Shaders (BetterRTX)")
+        self.tabs.addTab(self.backups_view, "World Backups")
+        self.tabs.addTab(self._build_diag_tab(), "Diagnostics")
+        self.tabs.addTab(self._build_maintenance_tab(), "Maintenance")
+        main_layout.addWidget(self.tabs)
+
+    def switch_to_tab(self, name: str):
+        mapping = {
+            "shaders": 0,
+            "betterrtx": 0,
+            "backups": 1,
+            "saves": 1,
+            "diagnostics": 2,
+            "doctor": 2,
+            "maintenance": 3,
+        }
+        idx = mapping.get(name.lower(), 0)
+        self.tabs.setCurrentIndex(idx)
 
     def _build_diag_tab(self) -> QWidget:
         w = QWidget()
@@ -80,6 +100,12 @@ class ToolsPage(QWidget):
         self.diag_console = QPlainTextEdit()
         self.diag_console.setObjectName("ConsoleDrawer")
         self.diag_console.setReadOnly(True)
+        self.diag_console.setPlaceholderText(
+            "System Diagnostics Console\n\n"
+            "Click 'Run System Doctor' or 'Run Network Diagnostics' above to inspect system health, "
+            "GPU driver compatibility, Proton runtime integrity, and Xbox Live connection status.\n\n"
+            "Diagnostics run non-destructively and will not alter your game saves or settings."
+        )
         layout.addWidget(self.diag_console, 1)
 
         return w

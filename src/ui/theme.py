@@ -112,6 +112,7 @@ def generate_qss() -> str:
         border-bottom: 8px;
         border-image: url("{ui_path}/button-default-default.svg") 4 4 8 4 repeat;
         min-height: 26px;
+        min-width: 72px;
         padding-left: 14px;
         padding-right: 14px;
         padding-top: 2px;
@@ -163,16 +164,18 @@ def generate_qss() -> str:
 
     /* Warning / Kill Button */
     QPushButton#KillButton, QPushButton#WarningButton {{
-        font-size: 14px;
+        font-family: "Mojangles", sans-serif;
+        font-size: 13px;
         font-weight: bold;
         color: #FFFFFF;
         background-color: #C0392B;
         border: 4px;
         border-bottom: 8px;
         border-image: url("{ui_path}/button-warning-default.svg") 4 4 8 4 repeat;
-        min-height: 30px;
-        padding-left: 16px;
-        padding-right: 16px;
+        min-height: 26px;
+        min-width: 82px;
+        padding-left: 12px;
+        padding-right: 12px;
     }}
 
     QPushButton#KillButton:hover, QPushButton#WarningButton:hover {{

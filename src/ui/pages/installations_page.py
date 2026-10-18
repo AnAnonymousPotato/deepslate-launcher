@@ -172,10 +172,12 @@ class InstallationsPage(QWidget):
         # Action Buttons
         if not is_active:
             use_btn = OreButton("Use This")
+            use_btn.setMinimumWidth(92)
             use_btn.clicked.connect(lambda _, b=build: self._activate_build(b))
             layout.addWidget(use_btn)
 
         folder_btn = OreButton("Folder")
+        folder_btn.setMinimumWidth(86)
         folder_icon = ORE_ICONS / "viewfolder.png"
         if folder_icon.exists():
             folder_btn.setIcon(QIcon(str(folder_icon)))
@@ -184,6 +186,7 @@ class InstallationsPage(QWidget):
         layout.addWidget(folder_btn)
 
         del_btn = OreButton("Delete", variant="warning")
+        del_btn.setMinimumWidth(92)
         del_icon = ORE_ICONS / "delete.png"
         if del_icon.exists():
             del_btn.setIcon(QIcon(str(del_icon)))

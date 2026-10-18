@@ -94,10 +94,14 @@ class MainWindow(QMainWindow):
 
         outer_layout.addWidget(content_wrapper, 1)
 
+        # Enable Drag and Drop Content Import
+        self.setAcceptDrops(True)
+
         # Wire Inter-page Signals
         self.installations_page.version_activated.connect(lambda _: self.play_page.refresh_versions())
         self.play_page.launch_requested.connect(self._start_game_launch)
         self.play_page.kill_requested.connect(self._stop_game)
+        self.play_page.open_tab_requested.connect(self._on_open_tab_requested)
 
         # Apply Ore UI Theme
         self.apply_theme()
@@ -106,6 +110,14 @@ class MainWindow(QMainWindow):
         init_fonts()
         qss = generate_qss()
         self.setStyleSheet(qss)
+
+    def _on_open_tab_requested(self, target: str):
+        if target.startswith("tools:"):
+            tab_name = target.split(":", 1)[1]
+            self.sidebar.set_active_page("tools")
+            self.tools_page.switch_to_tab(tab_name)
+        elif target in self.pages:
+            self.sidebar.set_active_page(target)
 
     def _on_page_changed(self, key: str):
         if key in self.pages:
@@ -116,6 +128,48 @@ class MainWindow(QMainWindow):
                 self.installations_page.populate_builds()
             elif key == "profiles":
                 self.profiles_page.refresh_profiles()
+            elif key == "tools":
+                if hasattr(self.tools_page, "betterrtx_view"):
+                    self.tools_page.betterrtx_view.refresh_presets()
+                if hasattr(self.tools_page, "backups_view"):
+                    self.tools_page.backups_view.refresh_backups()
+
+    def dragEnterEvent(self, event):
+        if event.mimeData().hasUrls():
+            valid_exts = {".mcpack", ".mcaddon", ".mcworld", ".mctemplate", ".mcskin", ".rtpack"}
+            for url in event.mimeData().urls():
+                p = Path(url.toLocalFile())
+                if p.suffix.lower() in valid_exts:
+                    event.acceptProposedAction()
+                    return
+        event.ignore()
+
+    def dropEvent(self, event):
+        valid_exts = {".mcpack", ".mcaddon", ".mcworld", ".mctemplate", ".mcskin", ".rtpack"}
+        to_import = []
+        for url in event.mimeData().urls():
+            p = Path(url.toLocalFile())
+            if p.suffix.lower() in valid_exts and p.is_file():
+                to_import.append(p)
+
+        if not to_import:
+            event.ignore()
+            return
+
+        event.acceptProposedAction()
+        self.console_drawer.append_log(f"[Deepslate] Importing {len(to_import)} content file(s)...")
+        try:
+            results = engine.import_game_content(to_import)
+            summary = "\n".join(results) if results else "Import completed successfully."
+            self.console_drawer.append_log(f"[Deepslate] Content import results:\n{summary}")
+            QMessageBox.information(self, "Content Imported", f"Import successful:\n\n{summary}")
+            if hasattr(self.tools_page, "betterrtx_view"):
+                self.tools_page.betterrtx_view.refresh_presets()
+            if hasattr(self.tools_page, "backups_view"):
+                self.tools_page.backups_view.refresh_backups()
+        except Exception as exc:
+            self.console_drawer.append_log(f"[Deepslate] Import failed: {exc}")
+            QMessageBox.critical(self, "Import Failed", f"Failed to import content:\n{exc}")
 
     def _start_game_launch(self):
         self.console_drawer.append_log("[Deepslate] Launching Minecraft Bedrock...")
