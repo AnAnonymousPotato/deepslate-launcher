@@ -33,7 +33,7 @@ def main():
     app.setApplicationName("Deepslate Launcher")
     app.setApplicationDisplayName("Deepslate Launcher")
     app.setOrganizationName("Deepslate")
-    app.setDesktopFileName("deepslate.desktop")
+    app.setDesktopFileName("deepslate")
 
     from src.ui.theme import init_fonts
     init_fonts()
